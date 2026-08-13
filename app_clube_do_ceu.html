@@ -1,0 +1,1180 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clube do Céu — Gestão de Quadras</title>
+<style>
+  :root{
+    --bg:#f2f6f8; --surface:#ffffff; --surface2:#e9eff3;
+    --ink:#16303c; --ink2:#51707e; --line:#d5dfe5;
+    --accent:#1273b5; --accent-ink:#ffffff;
+    --aula:#1273b5; --aula-bg:#e2eff8;
+    --inf:#7c5cb0; --inf-bg:#efe9f7;
+    --reserva:#2c8a5b; --reserva-bg:#e4f2ea;
+    --evento:#b3762a; --evento-bg:#f7eddd;
+    --ok:#2c8a5b; --warn:#c04b31;
+    --shadow:0 1px 3px rgba(22,48,60,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#101c23; --surface:#182a33; --surface2:#13232b;
+      --ink:#dce8ee; --ink2:#8fa8b3; --line:#2a4250;
+      --accent:#4da3d8; --accent-ink:#0d1b22;
+      --aula:#4da3d8; --aula-bg:#1a3a4d;
+      --inf:#a98fd6; --inf-bg:#2d2543;
+      --reserva:#5cba8b; --reserva-bg:#1c3a2b;
+      --evento:#d8a055; --evento-bg:#3d2f1a;
+      --ok:#5cba8b; --warn:#e07b5f;
+      --shadow:0 1px 3px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#101c23; --surface:#182a33; --surface2:#13232b;
+    --ink:#dce8ee; --ink2:#8fa8b3; --line:#2a4250;
+    --accent:#4da3d8; --accent-ink:#0d1b22;
+    --aula:#4da3d8; --aula-bg:#1a3a4d;
+    --inf:#a98fd6; --inf-bg:#2d2543;
+    --reserva:#5cba8b; --reserva-bg:#1c3a2b;
+    --evento:#d8a055; --evento-bg:#3d2f1a;
+    --ok:#5cba8b; --warn:#e07b5f;
+    --shadow:0 1px 3px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif;}
+  header{background:var(--surface);border-bottom:1px solid var(--line);
+    padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .logo{display:flex;flex-direction:column}
+  .logo b{font-size:19px;letter-spacing:.2px}
+  .logo span{font-size:11.5px;color:var(--ink2);text-transform:uppercase;letter-spacing:.12em}
+  nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+  nav button{border:0;background:transparent;color:var(--ink2);padding:9px 16px;
+    border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
+  nav button:hover{background:var(--surface2)}
+  nav button.on{background:var(--accent);color:var(--accent-ink)}
+  nav button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px}
+  main{max-width:1280px;margin:0 auto;padding:22px}
+  h2{font-size:17px;margin:0 0 4px}
+  .sub{color:var(--ink2);font-size:13px;margin:0 0 16px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    box-shadow:var(--shadow);padding:18px;margin-bottom:18px}
+  .row{display:flex;gap:14px;flex-wrap:wrap}
+  .row>.card{flex:1;min-width:200px;margin-bottom:0}
+  .kpi .lbl{font-size:11.5px;color:var(--ink2);text-transform:uppercase;letter-spacing:.1em}
+  .kpi .val{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+  .kpi .note{font-size:12.5px;color:var(--ink2)}
+  table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);
+    text-align:left;padding:8px 10px;border-bottom:2px solid var(--line)}
+  td{padding:8px 10px;border-bottom:1px solid var(--line)}
+  .scroll{overflow-x:auto}
+  /* ---- agenda com painel lateral ---- */
+  .agenda-wrap{display:flex;gap:16px;align-items:flex-start}
+  .painel{width:230px;flex-shrink:0}
+  .painel h3{font-size:13px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2)}
+  .painel .dica{font-size:12px;color:var(--ink2);margin:0 0 10px}
+  .chips{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow-y:auto}
+  .chip-aluno{display:flex;align-items:center;gap:8px;background:var(--surface2);
+    border:1px solid var(--line);border-radius:9px;padding:7px 10px;cursor:grab;
+    font-size:13.5px;font-weight:600;user-select:none}
+  .chip-aluno:active{cursor:grabbing}
+  .chip-aluno.sel{outline:2px solid var(--accent);background:var(--aula-bg)}
+  .chip-aluno .b-inf{font-size:10px;background:var(--inf-bg);color:var(--inf);
+    padding:1px 7px;border-radius:99px;font-weight:700}
+  .b-niv{font-size:10px;padding:1px 6px;border-radius:99px;font-weight:700;
+    background:var(--surface2);color:var(--ink2)}
+  .b-niv.n1{background:var(--surface2);color:var(--ink2)}
+  .b-niv.n2{background:var(--reserva-bg);color:var(--reserva)}
+  .b-niv.n3{background:var(--aula-bg);color:var(--aula)}
+  .b-niv.n4{background:var(--inf-bg);color:var(--inf)}
+  .b-niv.n5{background:var(--evento-bg);color:var(--evento)}
+  .sug-item{display:flex;gap:8px;align-items:center;padding:7px 10px;background:var(--surface2);
+    border-radius:8px;font-size:13px;margin-top:6px;flex-wrap:wrap}
+  .barra{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:6px 0 2px}
+  .barra i{display:block;height:100%;background:var(--accent);border-radius:99px}
+  .chip-aluno small{margin-left:auto;color:var(--ink2);font-weight:400;font-size:11px}
+  .grid-area{flex:1;min-width:0}
+  .grid{border-collapse:collapse;width:100%;table-layout:fixed;min-width:720px}
+  .grid th,.grid td{border:1px solid var(--line);padding:0;text-align:center}
+  .grid th{padding:7px 4px;background:var(--surface2)}
+  .grid td{height:52px;cursor:pointer;font-size:12px;vertical-align:middle}
+  .grid td:hover{outline:2px solid var(--accent);outline-offset:-2px}
+  .grid td.drop-ok{outline:2px dashed var(--accent);outline-offset:-2px;background:var(--aula-bg)}
+  .grid .hora{background:var(--surface2);font-weight:600;color:var(--ink2);cursor:default;width:54px}
+  .grid .hora:hover{outline:none}
+  .slot{height:100%;width:100%;display:flex;flex-direction:column;justify-content:center;
+    padding:2px 5px;border-left:4px solid transparent;overflow:hidden;text-align:left}
+  .slot b{font-size:11px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slot small{font-size:10px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+  .t-aula .slot{background:var(--aula-bg);border-color:var(--aula)}
+  .t-aula .slot small{color:var(--aula)}
+  .t-inf .slot{background:var(--inf-bg);border-color:var(--inf)}
+  .t-inf .slot small{color:var(--inf)}
+  .t-reserva .slot{background:var(--reserva-bg);border-color:var(--reserva)}
+  .t-reserva .slot small{color:var(--reserva)}
+  .t-evento .slot{background:var(--evento-bg);border-color:var(--evento)}
+  .t-evento .slot small{color:var(--evento)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin:10px 0 0}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px}
+  .pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600}
+  .p-ok{background:var(--reserva-bg);color:var(--ok)}
+  .p-warn{background:var(--evento-bg);color:var(--warn)}
+  .p-mut{background:var(--surface2);color:var(--ink2)}
+  button.btn{border:0;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:600;
+    padding:9px 18px;border-radius:8px;cursor:pointer}
+  button.ghost{background:var(--surface2);color:var(--ink)}
+  button.mini{padding:3px 10px;font-size:12.5px;border-radius:6px}
+  button.danger{background:transparent;color:var(--warn);border:1px solid var(--warn)}
+  label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin:10px 0 3px}
+  input,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--surface);color:var(--ink);font:inherit}
+  dialog{border:0;border-radius:14px;background:var(--surface);color:var(--ink);
+    box-shadow:0 10px 40px rgba(0,0,0,.3);padding:22px;width:min(440px,92vw)}
+  dialog::backdrop{background:rgba(10,25,33,.5)}
+  .dlg-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+  .filtros{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:14px}
+  .filtros>div{min-width:150px}
+  .filtros label{margin-top:0}
+  .hide{display:none}
+  .lista-slot{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+  .lista-slot .item{display:flex;align-items:center;gap:8px;background:var(--surface2);
+    border-radius:8px;padding:6px 10px;font-weight:600;font-size:13.5px}
+  .lista-slot .item button{margin-left:auto}
+  .mod-tag{font-size:12px;color:var(--ink2)}
+  .cfg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px 16px;align-items:end}
+  .cfg-grid>div{display:flex;flex-direction:column;justify-content:flex-end}
+  .cfg-grid label{margin-top:0;min-height:30px;display:flex;align-items:flex-end}
+  @media (max-width:760px){ .agenda-wrap{flex-direction:column} .painel{width:100%}
+    .chips{flex-direction:row;flex-wrap:wrap;max-height:none} }
+</style>
+
+<header>
+  <div class="logo" style="flex-direction:row;align-items:center;gap:11px">
+    <svg width="40" height="40" viewBox="0 0 100 100" style="border-radius:8px;flex-shrink:0" aria-label="Logotipo do Clube do Céu">
+      <rect width="100" height="61" fill="#1b75bb"/>
+      <rect y="61" width="100" height="39" fill="#7fb441"/>
+      <circle cx="50" cy="54" r="31" fill="#f5e31a"/>
+      <path d="M21 46 Q36 62 52 52 Q70 41 79 60" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+      <path d="M56 13 q5 -6 10 0 M70 20 q5 -6 10 0 M80 10 q5 -6 10 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+    <div style="display:flex;flex-direction:column">
+      <b>Clube do Céu</b><span>Chapadão do Céu · GO</span>
+      <span id="nuvem" style="font-size:11px;margin-top:2px"></span>
+    </div>
+  </div>
+  <nav>
+    <button class="on" data-tab="painel">Painel</button>
+    <button data-tab="agenda">Agenda</button>
+    <button data-tab="alunos">Alunos</button>
+    <button data-tab="mod">Modalidades</button>
+    <button data-tab="fin">Financeiro</button>
+    <button data-tab="cfg">Configurações</button>
+  </nav>
+</header>
+
+<main>
+<!-- ============ PAINEL ============ -->
+<section id="tab-painel">
+  <h2>Painel do clube</h2>
+  <p class="sub">Os números da semana num olhar só. Tudo calculado da agenda e do cadastro — atualiza sozinho.</p>
+  <div class="row" style="margin-bottom:18px">
+    <div class="card kpi"><div class="lbl">Ocupação da semana</div><div class="val" id="pOcup">—</div><div class="note" id="pOcupN"></div></div>
+    <div class="card kpi"><div class="lbl">Receita bruta aulas</div><div class="val" id="pBruta">—</div><div class="note" id="pBrutaN"></div></div>
+    <div class="card kpi"><div class="lbl">A receber (pendentes)</div><div class="val" id="pPend">—</div><div class="note" id="pPendN"></div></div>
+    <div class="card kpi"><div class="lbl">Alunos classificados</div><div class="val" id="pNiv">—</div><div class="note" id="pNivN"></div></div>
+  </div>
+  <div class="row" style="margin-bottom:18px">
+    <div class="card">
+      <h2 style="font-size:15px">Ocupação por dia</h2>
+      <p class="sub" style="margin-bottom:10px">Horas ocupadas em cada dia sobre a base de horas úteis — pode passar de 100%.</p>
+      <div id="pDias" style="display:flex;flex-direction:column;gap:9px"></div>
+    </div>
+    <div class="card">
+      <h2 style="font-size:15px">Níveis dos alunos</h2>
+      <p class="sub" style="margin-bottom:10px">Distribuição da classificação — classifique os "N?" na ficha de cada aluno.</p>
+      <div id="pNiveis" style="display:flex;flex-direction:column;gap:9px"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="card">
+      <h2 style="font-size:15px">Oportunidades</h2>
+      <div id="pOport"></div>
+    </div>
+    <div class="card">
+      <h2 style="font-size:15px">Turmas para revisar</h2>
+      <p class="sub" style="margin-bottom:6px">Horários com níveis incompatíveis (mais de 1 nível de diferença) ou público misturado.</p>
+      <div id="pRevisar"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AGENDA ============ -->
+<section id="tab-agenda" class="hide">
+  <h2>Agenda semanal</h2>
+  <p class="sub"><b>Arraste um aluno</b> do painel para o dia e horário da aula. Com 1 aluno no horário é Individual; com 2, Dupla; com 3, Trio; com 4, Quarteto — o valor é calculado sozinho. Aluno com 2 horários na semana paga o valor cheio; com 1, paga metade. A grade é do professor selecionado; a <b>quadra</b> é reservada automaticamente (a primeira livre no horário, mostrada no quadrinho como Q1/Q2) e pode ser trocada clicando no horário.</p>
+  <div class="card">
+    <div class="agenda-wrap">
+      <div class="painel">
+        <h3>Alunos</h3>
+        <p class="dica">Arraste para a grade (ou toque no nome e depois no horário).</p>
+        <div class="chips" id="chips"></div>
+        <button class="btn ghost" id="btnNovoAluno2" style="margin-top:10px;width:100%">+ Novo aluno</button>
+      </div>
+      <div class="grid-area">
+        <div class="filtros">
+          <div><label>Professor</label><select id="selProf"></select></div>
+        </div>
+        <div class="scroll"><table class="grid" id="gridAgenda"></table></div>
+        <div class="legend">
+          <span><i style="background:var(--aula)"></i>Aula</span>
+          <span><i style="background:var(--inf)"></i>Aula infantil</span>
+          <span><i style="background:var(--reserva)"></i>Reserva de sócio</span>
+          <span><i style="background:var(--evento)"></i>Evento</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2 style="font-size:15px">Aproveitamento dos horários</h2>
+    <div id="sugOcup" class="sub" style="margin-bottom:4px"></div>
+    <div class="barra"><i id="sugBarra" style="width:0%"></i></div>
+    <div id="sugLista"></div>
+  </div>
+</section>
+
+<!-- ============ ALUNOS ============ -->
+<section id="tab-alunos" class="hide">
+  <h2>Alunos</h2>
+  <p class="sub">Cadastre só o nome e os dados de contato. A modalidade, a frequência e a mensalidade saem automaticamente da agenda.</p>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="filtros" style="margin:0">
+        <div><label>Filtrar</label><select id="filtroAluno">
+          <option value="todos">Todos</option>
+          <option value="pend">Pagamento pendente</option>
+          <option value="sem">Sem horário na agenda</option>
+        </select></div>
+      </div>
+      <button class="btn" id="btnNovoAluno">+ Novo aluno</button>
+    </div>
+    <div class="scroll" style="margin-top:12px">
+      <table id="tblAlunos">
+        <thead><tr>
+          <th>Nome</th><th>Telefone</th><th>Horários na semana</th>
+          <th style="text-align:right">Mensalidade</th><th>Sócio</th><th>Mês atual</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h2 style="font-size:15px">Tabela de níveis — padrão internacional</h2>
+    <p class="sub">Baseada no NTRP (federação americana/USTA) e no ITN (Federação Internacional de Tênis). Todo mundo classifica pela mesma régua: na dúvida entre dois níveis, escolha o menor.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Nível</th><th>NTRP</th><th>ITN</th><th>Como identificar na quadra</th></tr></thead>
+      <tbody>
+        <tr><td><span class="b-niv n1">N1</span> <b>Iniciante</b></td><td>1.0–2.0</td><td>10</td><td>Começando agora: aprendendo empunhadura e postura; troca bolas curtas e lentas, sem controle de direção.</td></tr>
+        <tr><td><span class="b-niv n2">N2</span> <b>Inic./Interm.</b></td><td>2.5</td><td>9–8</td><td>Sustenta troca lenta do fundo; saque entra mas sem direção; ainda erra bolas fáceis e cobre mal a quadra.</td></tr>
+        <tr><td><span class="b-niv n3">N3</span> <b>Intermediário</b></td><td>3.0–3.5</td><td>7–6</td><td>Consistente em ritmo médio; dá direção (paralela/cruzada); primeiro saque com ritmo; joga pontos e sets; voleio básico.</td></tr>
+        <tr><td><span class="b-niv n4">N4</span> <b>Interm./Avanç.</b></td><td>4.0–4.5</td><td>5–4</td><td>Usa efeitos (top spin/slice), varia altura e profundidade, constrói o ponto com estratégia; saque forte; compete bem.</td></tr>
+        <tr><td><span class="b-niv n5">N5</span> <b>Avançado</b></td><td>5.0+</td><td>3–1</td><td>Nível de torneio: arma o ponto com saque e primeiro golpe, explora fraqueza do adversário, físico e cabeça de competição.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ MODALIDADES ============ -->
+<section id="tab-mod" class="hide">
+  <h2>Modalidades e valores</h2>
+  <p class="sub">Valor por aluno, por mês, para quem faz <b>2 aulas na semana</b>. Quem faz 1 aula por semana paga metade (calculado automaticamente). Edite qualquer valor — mensalidades e financeiro se atualizam na hora.</p>
+  <div class="card">
+    <div class="scroll"><table id="tblModCfg">
+      <thead><tr>
+        <th>Modalidade</th><th>Público</th><th>Na quadra</th>
+        <th style="text-align:right">Mensal 2x/sem (R$)</th>
+        <th style="text-align:right">Mensal 1x/sem</th>
+        <th style="text-align:right">Turma cheia rende/mês</th>
+        <th style="text-align:right">R$/hora de quadra</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="sub" style="margin-top:12px"><b>R$/hora de quadra</b> = quanto a modalidade rende por hora ocupada (receita da turma cheia ÷ 8,66 aulas por mês). É o número para decidir qual modalidade priorizar nos horários disputados — a de maior R$/hora aparece marcada com ★.</p>
+  </div>
+  <div class="card">
+    <h2 style="font-size:15px">Regras de preço do clube</h2>
+    <div class="cfg-grid" style="margin:10px 0;max-width:280px">
+      <div><label>Piso por aluno (R$/mês, 2x/sem)</label><input type="number" id="cfgPiso" min="0"></div>
+    </div>
+    <div id="regrasTexto" class="sub" style="margin-bottom:6px"></div>
+    <div id="regrasAlertas"></div>
+  </div>
+</section>
+
+<!-- ============ FINANCEIRO ============ -->
+<section id="tab-fin" class="hide">
+  <h2>Financeiro do mês</h2>
+  <p class="sub">Tudo calculado direto da agenda real — sem projeções. Divisão clube/professor conforme a taxa configurada.</p>
+  <div class="row" style="margin-bottom:18px">
+    <div class="card kpi"><div class="lbl">Receita bruta aulas</div><div class="val" id="kBruta">—</div><div class="note" id="kAlunos"></div></div>
+    <div class="card kpi"><div class="lbl">Fica com o clube</div><div class="val" id="kClube">—</div><div class="note" id="kTaxa"></div></div>
+    <div class="card kpi"><div class="lbl">Repasse professor</div><div class="val" id="kProf">—</div><div class="note">aulas apenas</div></div>
+    <div class="card kpi"><div class="lbl">Mensalidades de sócio</div><div class="val" id="kSocios">—</div><div class="note" id="kSociosN"></div></div>
+  </div>
+  <div class="card">
+    <b>Total do clube no mês: <span id="kTotal" style="font-variant-numeric:tabular-nums"></span></b>
+    <div class="sub" style="margin-top:4px">Aulas (parte do clube) + mensalidades de sócio.</div>
+    <div class="sub" id="kGarantiaInfo" style="margin-top:2px"></div>
+  </div>
+  <div class="row">
+    <div class="card">
+      <h2 style="font-size:15px">Receita por modalidade</h2>
+      <div class="scroll"><table id="tblMod"><thead><tr><th>Modalidade</th><th style="text-align:right">Alunos</th><th style="text-align:right">Receita/mês</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h2 style="font-size:15px">Pagamentos pendentes</h2>
+      <div class="scroll"><table id="tblPend"><thead><tr><th>Aluno</th><th style="text-align:right">Valor</th><th></th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONFIG ============ -->
+<section id="tab-cfg" class="hide">
+  <h2>Configurações</h2>
+  <p class="sub">Regras gerais do clube. Os valores das aulas ficam na aba <b>Modalidades</b>.</p>
+  <div class="card">
+    <div class="cfg-grid">
+      <div><label>Divisão das aulas: % do clube (professor fica com o resto — hoje 50/50)</label><input type="number" id="cfgTaxa" min="0" max="100"></div>
+      <div><label>Horas úteis seg–sex (base da ocupação)</label><input type="number" id="cfgHorasDia" min="0" max="16"></div>
+      <div><label>Horas úteis no sábado</label><input type="number" id="cfgHorasSab" min="0" max="16"></div>
+      <div><label>Horas úteis no domingo</label><input type="number" id="cfgHorasDom" min="0" max="16"></div>
+      <div><label>Garantia do professor (R$/mês, 0 desliga)</label><input type="number" id="cfgGarantia" min="0"></div>
+      <div><label>Mensalidade de sócio (R$)</label><input type="number" id="cfgSocio" min="0"></div>
+      <div><label>Professores (separe por vírgula)</label><input type="text" id="cfgProfs"></div>
+      <div><label>Quadras (separe por vírgula)</label><input type="text" id="cfgQuadras"></div>
+      <div><label>Agenda abre às (h)</label><input type="number" id="cfgIni" min="0" max="23"></div>
+      <div><label>Agenda fecha às (h)</label><input type="number" id="cfgFim" min="1" max="24"></div>
+    </div>
+    <h2 style="font-size:15px;margin-top:18px">Horário nobre</h2>
+    <div class="cfg-grid" style="margin-top:8px">
+      <div><label>Nobre tarde: das (h)</label><input type="number" id="cfgPremIni" min="0" max="23"></div>
+      <div><label>Nobre tarde: até (h)</label><input type="number" id="cfgPremFim" min="0" max="24"></div>
+      <div><label>Nobre manhã: das (h)</label><input type="number" id="cfgPremIni2" min="0" max="23"></div>
+      <div><label>Nobre manhã: até (h)</label><input type="number" id="cfgPremFim2" min="0" max="24"></div>
+      <div><label>Nobre: acréscimo extra (%) — 0 sem acréscimo</label><input type="number" id="cfgPremPct" min="0" max="100"></div>
+      <div><label>Nobre: nível mínimo (0 = livre)</label><input type="number" id="cfgPremNiv" min="0" max="5"></div>
+    </div>
+    <div class="dlg-actions" style="justify-content:flex-start">
+      <button class="btn" id="btnSalvarCfg">Salvar configurações</button>
+      <button class="ghost btn" id="btnReset">Restaurar dados de exemplo</button>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- modal slot -->
+<dialog id="dlgSlot">
+  <h2 id="dlgSlotTitulo">Horário</h2>
+  <p class="sub" id="dlgSlotSub"></p>
+  <label>Quadra reservada</label>
+  <select id="slotQuadra"></select>
+  <div id="slotAulaBox">
+    <div class="mod-tag" id="slotMod"></div>
+    <div class="lista-slot" id="slotLista"></div>
+    <label>Adicionar aluno neste horário</label>
+    <select id="slotAddAluno"></select>
+  </div>
+  <div id="slotOutroBox">
+    <label>Ou marcar como</label>
+    <select id="slotTipo">
+      <option value="">—</option>
+      <option value="reserva">Reserva de sócio</option>
+      <option value="evento">Evento</option>
+    </select>
+    <input id="slotTitulo" placeholder="Descrição (ex.: Sócio João / Torneio interno)" style="margin-top:8px">
+  </div>
+  <div class="dlg-actions">
+    <button class="danger btn hide" id="slotExcluir">Limpar horário</button>
+    <button class="ghost btn" id="slotCancelar">Fechar</button>
+    <button class="btn" id="slotSalvar">Salvar</button>
+  </div>
+</dialog>
+
+<!-- modal aluno -->
+<dialog id="dlgAluno">
+  <h2 id="dlgAlunoTitulo">Novo aluno</h2>
+  <label>Nome</label><input id="alNome">
+  <label>Telefone</label><input id="alFone" placeholder="(64) 9…">
+  <label>Valor combinado (R$/mês) — opcional</label>
+  <input type="number" id="alFixo" min="0" placeholder="vazio = calcula pela quantidade na quadra">
+  <label>Infantil (criança)?</label>
+  <select id="alInf"><option value="nao">Não — adulto</option><option value="sim">Sim — infantil</option></select>
+  <label>Nível de habilidade</label>
+  <select id="alNivel">
+    <option value="">Ainda não avaliado</option>
+    <option value="1">N1 — Iniciante (NTRP 1.0–2.0)</option>
+    <option value="2">N2 — Iniciante/Intermediário (NTRP 2.5)</option>
+    <option value="3">N3 — Intermediário (NTRP 3.0–3.5)</option>
+    <option value="4">N4 — Intermediário/Avançado (NTRP 4.0–4.5)</option>
+    <option value="5">N5 — Avançado (NTRP 5.0+)</option>
+  </select>
+  <details style="margin-top:8px">
+    <summary style="cursor:pointer;font-size:12.5px;color:var(--ink2);font-weight:600">Ver a régua de níveis (NTRP/ITF)</summary>
+    <div style="font-size:12.5px;color:var(--ink2);margin-top:6px;display:flex;flex-direction:column;gap:5px">
+      <div><span class="b-niv n1">N1</span> Aprendendo empunhadura; troca bolas curtas e lentas.</div>
+      <div><span class="b-niv n2">N2</span> Sustenta troca lenta; saque entra sem direção.</div>
+      <div><span class="b-niv n3">N3</span> Consistente em ritmo médio; direção; joga pontos.</div>
+      <div><span class="b-niv n4">N4</span> Efeitos, estratégia, saque forte; compete bem.</div>
+      <div><span class="b-niv n5">N5</span> Nível de torneio.</div>
+      <div>Na dúvida entre dois níveis, escolha o menor.</div>
+    </div>
+  </details>
+  <label>Sócio do clube</label>
+  <select id="alSocio"><option value="sim">Sim</option><option value="novo">Sim — novo sócio (captado pelas aulas)</option><option value="nao">Não</option></select>
+  <label>Pagamento do mês</label>
+  <select id="alPago"><option value="sim">Pago</option><option value="nao">Pendente</option></select>
+  <div class="dlg-actions">
+    <button class="danger btn hide" id="alExcluir">Excluir aluno</button>
+    <button class="ghost btn" id="alCancelar">Cancelar</button>
+    <button class="btn" id="alSalvar">Salvar</button>
+  </div>
+</dialog>
+
+<script>
+'use strict';
+const DIAS = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+const MAX_POR_QUADRA = 4;
+const DEFAULT_CFG = {
+  p1:600, p2:500, p3:350, p4:280, inf1:450, infG:200, avulsa:0,
+  taxaClube:50, socio:160,
+  quadras:['Tênis 2 (aberta)','Tênis 3 (aberta)','Tênis 4 (coberta)','Tênis 5 (coberta)',
+    'Pádel 1','Pádel 2','Tênis 1 (indisponível)'],
+  professores:['Mateus Heerdt','Rodrigo Bernardes','Tália Pelizon'], profsV2:true,
+  horaIni:6, horaFim:22,
+  premIni:17, premFim:20, premIni2:6, premFim2:8, premPct:0, premNivelMin:0, piso:350,
+  garantiaProf:4000, horasUteisDia:9, horasSab:5, horasDom:0
+};
+// horas úteis de aula por dia da semana (0=Seg … 5=Sáb, 6=Dom)
+const horasDoDia = d => d<5 ? db.cfg.horasUteisDia : d===5 ? db.cfg.horasSab : db.cfg.horasDom;
+const horasSemanaUtil = () => [0,1,2,3,4,5,6].reduce((s,d)=>s+horasDoDia(d),0);
+
+// Alunos reais da ficha "Alunos tênis" (12/08/2026). "pg" na ficha = pago.
+// Agenda começa vazia: distribua os alunos nos horários para montar a estimativa.
+// valorFixo = mensalidade combinada com o aluno (vale mesmo com a turma incompleta).
+// null = calcular automaticamente pela quantidade de alunos na quadra.
+const FICHA = {'Luiza':500,'Magui':500,'Eduardo':600,'Thomás':600,'Thiago Moura':280,
+  'Matheus':280,'Suzana':280,'Marcos':280,'Hugo':280,'Matheus (médico)':280,
+  'Leonardo':280,'Jady':450,'Anita':450,'Érico':450};
+function seed(){
+  const al = [];
+  const add=(nome,inf,pago)=>al.push({id:crypto.randomUUID(),nome,fone:'',infantil:inf,
+    socio:'sim',pago,valorFixo:FICHA[nome]??null,nivel:null});
+  add('Luiza',false,false);
+  add('Magui',false,false);
+  add('Eduardo',false,false);
+  add('Thomás',false,false);
+  add('Thiago Moura',false,true);    // pg
+  add('Matheus',false,true);         // pg
+  add('Suzana',false,false);
+  add('Marcos',false,true);          // pg
+  add('Hugo',false,false);
+  add('Matheus (médico)',false,false);
+  add('Leonardo',false,false);
+  add('Jady',true,false);
+  add('Anita',true,false);
+  add('Érico',true,false);
+  return {alunos:al, agenda:[], cfg:structuredClone(DEFAULT_CFG)};
+}
+
+// ---------- nuvem (Supabase) ----------
+const SUPA_URL = 'https://rznueluwhujcpkxcsddi.supabase.co';
+const SUPA_KEY = 'sb_publishable_9M2xgzIsxBAJonx_1wACtA__ibPAULC';
+const SUPA_H = {apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY, 'Content-Type':'application/json'};
+let nuvemOk = false, salvarTimer = null;
+async function enviarNuvem(){
+  try{
+    const r = await fetch(SUPA_URL+'/rest/v1/clube_ceu_estado?on_conflict=id',{
+      method:'POST',
+      headers:{...SUPA_H, Prefer:'resolution=merge-duplicates'},
+      body: JSON.stringify([{id:'principal', data:db, updated_at:new Date().toISOString()}])
+    });
+    nuvemOk = r.ok;
+  }catch(e){ nuvemOk = false; }
+  statusNuvem();
+}
+function statusNuvem(){
+  const el = document.getElementById('nuvem');
+  if(!el) return;
+  el.textContent = nuvemOk ? '☁ dados na nuvem' : '⚠ offline — salvo só neste aparelho';
+  el.style.color = nuvemOk ? 'var(--ok)' : 'var(--warn)';
+}
+
+let db;
+async function load(){
+  try{
+    const raw = localStorage.getItem('clube_ceu_db_v3');
+    db = raw ? JSON.parse(raw) : seed();
+  }catch(e){ db = seed(); }
+  // a nuvem é a fonte principal; o navegador é reserva para quando estiver sem internet
+  try{
+    const r = await fetch(SUPA_URL+'/rest/v1/clube_ceu_estado?id=eq.principal&select=data',{headers:SUPA_H});
+    if(r.ok){
+      const rows = await r.json();
+      if(rows.length && rows[0].data) db = rows[0].data;
+      else enviarNuvem(); // primeira vez: sobe o estado local
+      nuvemOk = true;
+    }
+  }catch(e){ nuvemOk = false; }
+  // migração: aplica os valores combinados da ficha a dados salvos antes do campo existir
+  for(const a of db.alunos){
+    if(a.valorFixo===undefined) a.valorFixo = FICHA[a.nome] ?? null;
+    if(a.nivel===undefined) a.nivel = null;
+  }
+  // migração: novos professores contratados entram uma única vez
+  if(db.cfg.professores && !db.cfg.profsV2){
+    for(const p of ['Rodrigo Bernardes','Tália Pelizon'])
+      if(!db.cfg.professores.includes(p)) db.cfg.professores.push(p);
+    db.cfg.profsV2 = true;
+  }
+  for(const k in DEFAULT_CFG) if(db.cfg[k]===undefined) db.cfg[k]=DEFAULT_CFG[k];
+  // migração: aulas antigas ganham o professor titular
+  for(const s of db.agenda) if(s.prof===undefined) s.prof = db.cfg.professores[0];
+  // migração: lista antiga de quadras genéricas vira o cadastro real do clube
+  if(db.cfg.quadras.length<=2 && db.cfg.quadras.every(q=>q.startsWith('Quadra ')))
+    db.cfg.quadras = structuredClone(DEFAULT_CFG.quadras);
+  for(const s of db.agenda) if(!db.cfg.quadras.includes(s.quadra)) s.quadra = db.cfg.quadras[0];
+}
+function save(){
+  try{ localStorage.setItem('clube_ceu_db_v3', JSON.stringify(db)); }catch(e){}
+  clearTimeout(salvarTimer);
+  salvarTimer = setTimeout(enviarNuvem, 600);
+}
+const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const aluno = id => db.alunos.find(a=>a.id===id);
+const NIVEIS = {1:'Iniciante',2:'Inic./Interm.',3:'Intermediário',4:'Interm./Avanç.',5:'Avançado'};
+const nivBadge = a => a.nivel
+  ? `<span class="b-niv n${a.nivel}" title="${NIVEIS[a.nivel]}">N${a.nivel}</span>`
+  : '<span class="b-niv" title="nível não avaliado">N?</span>';
+// compatível = mesmo público (adulto/infantil) e no máximo 1 nível de diferença
+function incompativel(a,b){
+  if(a.infantil!==b.infantil) return true;
+  if(a.nivel && b.nivel && Math.abs(a.nivel-b.nivel)>1) return true;
+  return false;
+}
+
+// ---------- regras de preço (da planilha) ----------
+// horários nobres: duas janelas (manhã e fim de tarde). Acréscimo % é opcional.
+const isPremium = h => (h>=db.cfg.premIni && h<db.cfg.premFim) ||
+                       (h>=db.cfg.premIni2 && h<db.cfg.premFim2);
+// preço do aluno num horário: valor combinado (se houver) ou automático pela quantidade na quadra.
+// Trava do horário nobre: a hora deve render no mínimo uma dupla cheia (2 × valor de dupla);
+// aluno adulto sozinho paga esse mínimo, e o preço normal volta quando a turma cresce.
+function precoNoSlot(a, tamanho, hora){
+  if(a.valorFixo!=null && a.valorFixo>0) return a.valorFixo;
+  let v;
+  if(a.infantil) v = tamanho<=1 ? db.cfg.inf1 : db.cfg.infG;
+  else v = [db.cfg.p1,db.cfg.p1,db.cfg.p2,db.cfg.p3,db.cfg.p4][Math.min(tamanho,4)];
+  if(hora!==undefined && isPremium(hora)){
+    if(db.cfg.premPct>0) v = v*(1+db.cfg.premPct/100);
+    if(!a.infantil){
+      const minPorAluno = (db.cfg.p2*2)/Math.max(1,tamanho);
+      if(v < minPorAluno) v = minPorAluno;
+    }
+  }
+  return v;
+}
+// mensalidade cheia = 2 aulas/semana → cada horário semanal vale metade do preço.
+// 2 horários = valor cheio; 1 horário = 50% — igual à planilha.
+function slotsDoAluno(id){
+  return db.agenda.filter(s=>s.tipo==='aula' && s.alunos && s.alunos.includes(id));
+}
+function mensalidade(a){
+  return slotsDoAluno(a.id).reduce((soma,s)=>soma + precoNoSlot(a, s.alunos.length, s.hora)/2, 0);
+}
+function modalidadeLabel(slot){
+  const n = slot.alunos.length;
+  const temInf = slot.alunos.some(id=>{const a=aluno(id); return a && a.infantil;});
+  if(temInf) return n<=1 ? 'Infantil individual' : 'Infantil turma';
+  return ['—','Individual','Dupla','Trio','Quarteto'][Math.min(n,4)];
+}
+function horariosLabel(a){
+  const ss = slotsDoAluno(a.id);
+  if(!ss.length) return '';
+  return ss.map(s=>`${DIAS[s.dia]} ${String(s.hora).padStart(2,'0')}h (${modalidadeLabel(s)})`).join(' · ');
+}
+
+// ---------- navegação ----------
+document.querySelectorAll('nav button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    document.querySelectorAll('main > section').forEach(s=>s.classList.add('hide'));
+    document.getElementById('tab-'+b.dataset.tab).classList.remove('hide');
+    render();
+  });
+});
+
+// ---------- painel de alunos (arrastar) ----------
+let selChip = null; // fallback por toque: aluno selecionado
+let chipsAbertos = false; // grupo "já na agenda" começa recolhido
+function chipAluno(a){
+  const el = document.createElement('div');
+  el.className = 'chip-aluno'+(selChip===a.id?' sel':'');
+  el.draggable = true;
+  el.innerHTML = `<span>${a.nome}</span>`+nivBadge(a)+
+    (a.infantil?'<span class="b-inf">INF</span>':'')+
+    `<small>${slotsDoAluno(a.id).length}×/sem</small>`;
+  el.addEventListener('dragstart',ev=>{
+    ev.dataTransfer.setData('text/plain','aluno:'+a.id);
+    ev.dataTransfer.effectAllowed='copy';
+  });
+  el.addEventListener('click',()=>{
+    selChip = selChip===a.id ? null : a.id;
+    renderChips();
+  });
+  return el;
+}
+function renderChips(){
+  const box = document.getElementById('chips');
+  box.innerHTML = '';
+  const semAgenda = db.alunos.filter(a=>slotsDoAluno(a.id).length===0);
+  const naAgenda  = db.alunos.filter(a=>slotsDoAluno(a.id).length>0);
+  for(const a of semAgenda) box.appendChild(chipAluno(a));
+  if(!semAgenda.length)
+    box.insertAdjacentHTML('beforeend','<div class="dica" style="color:var(--ok)">Todos os alunos já estão na agenda 🎾</div>');
+  if(naAgenda.length){
+    const det = document.createElement('details');
+    det.open = chipsAbertos;
+    det.innerHTML = `<summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--ink2);margin:10px 0 6px">Já na agenda (${naAgenda.length}) ▾</summary>`;
+    const inner = document.createElement('div');
+    inner.style.cssText = 'display:flex;flex-direction:column;gap:6px';
+    for(const a of naAgenda) inner.appendChild(chipAluno(a));
+    det.appendChild(inner);
+    det.addEventListener('toggle',()=>{ chipsAbertos = det.open; });
+    box.appendChild(det);
+  }
+}
+
+// ---------- agenda ----------
+function slotEm(prof,dia,hora){
+  return db.agenda.find(x=>x.prof===prof && x.dia===dia && x.hora===hora);
+}
+function quadraLivre(quadra,dia,hora,ignoreId){
+  return !db.agenda.some(x=>x.quadra===quadra && x.dia===dia && x.hora===hora && x.id!==ignoreId);
+}
+function melhorQuadra(dia,hora){
+  const uteis = db.cfg.quadras.filter(q=>!/indispon/i.test(q));
+  return uteis.find(q=>quadraLivre(q,dia,hora)) || uteis[0] || db.cfg.quadras[0];
+}
+const qTag = q => (q||'').replace(/Tênis\s*/,'T').replace(/Pádel\s*/,'P').replace(/\s*\(.*?\)/,'').trim();
+function colocarAluno(idAluno,prof,dia,hora){
+  let s = slotEm(prof,dia,hora);
+  if(s && s.tipo!=='aula') return; // horário ocupado por reserva/evento
+  if(!s){
+    s = {id:crypto.randomUUID(),prof,quadra:melhorQuadra(dia,hora),dia,hora,tipo:'aula',alunos:[]};
+    db.agenda.push(s);
+  }
+  if(s.alunos.includes(idAluno)) return;
+  if(s.alunos.length>=MAX_POR_QUADRA) return;
+  const novo = aluno(idAluno);
+  if(isPremium(hora) && db.cfg.premNivelMin>0 && novo.nivel && novo.nivel<db.cfg.premNivelMin &&
+    !confirm(`Horário premium reservado para nível N${db.cfg.premNivelMin}+ e ${novo.nome} é ${NIVEIS[novo.nivel]}.\n\nColocar mesmo assim?`)) return;
+  const conflito = s.alunos.map(aluno).filter(Boolean).find(b=>incompativel(novo,b));
+  if(conflito && !confirm(
+    `Atenção: ${novo.nome} (${novo.nivel?NIVEIS[novo.nivel]:'sem nível'}${novo.infantil?', infantil':''}) `+
+    `pode não combinar com ${conflito.nome} (${conflito.nivel?NIVEIS[conflito.nivel]:'sem nível'}${conflito.infantil?', infantil':''}) nesta turma.\n\nColocar mesmo assim?`)) return;
+  s.alunos.push(idAluno);
+  save(); render();
+}
+function renderAgenda(){
+  const sel = document.getElementById('selProf');
+  const atual = sel.value;
+  sel.innerHTML = db.cfg.professores.map(p=>`<option${p===atual?' selected':''}>${p}</option>`).join('');
+  const prof = sel.value || db.cfg.professores[0];
+  const t = document.getElementById('gridAgenda');
+  let html = '<tr><th class="hora">Hora</th>'+DIAS.map(d=>`<th>${d}</th>`).join('')+'</tr>';
+  for(let h=db.cfg.horaIni; h<db.cfg.horaFim; h++){
+    html += `<tr><td class="hora"${isPremium(h)?' title="horário nobre'+(db.cfg.premPct>0?' +'+db.cfg.premPct+'%':'')+'" style="color:var(--evento)"':''}>${String(h).padStart(2,'0')}h${isPremium(h)?'★':''}</td>`;
+    for(let d=0; d<7; d++){
+      const s = slotEm(prof,d,h);
+      if(s && s.tipo==='aula' && s.alunos.length){
+        const nomes = s.alunos.map(id=>{const a=aluno(id);return a?a.nome.split(' ')[0]:'?';}).join(', ');
+        const temInf = s.alunos.some(id=>{const a=aluno(id);return a&&a.infantil;});
+        html += `<td class="${temInf?'t-inf':'t-aula'}" data-d="${d}" data-h="${h}" data-slot="${s.id}" draggable="true">
+          <div class="slot"><small>${modalidadeLabel(s)} · ${qTag(s.quadra)}</small><b>${nomes}</b></div></td>`;
+      } else if(s && s.tipo!=='aula'){
+        const tipos={reserva:'Reserva',evento:'Evento'};
+        html += `<td class="t-${s.tipo}" data-d="${d}" data-h="${h}" data-slot="${s.id}" draggable="true">
+          <div class="slot"><small>${tipos[s.tipo]} · ${qTag(s.quadra)}</small><b>${s.titulo||''}</b></div></td>`;
+      } else {
+        html += `<td data-d="${d}" data-h="${h}"></td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  t.innerHTML = html;
+  t.querySelectorAll('td:not(.hora)').forEach(td=>{
+    const d=+td.dataset.d, h=+td.dataset.h;
+    td.addEventListener('click',()=>{
+      if(selChip){ colocarAluno(selChip,prof,d,h); selChip=null; renderChips(); }
+      else abrirSlot(prof,d,h);
+    });
+    // arrastar o quadrinho inteiro para outro horário
+    if(td.dataset.slot){
+      td.addEventListener('dragstart',ev=>{
+        ev.dataTransfer.setData('text/plain','slot:'+td.dataset.slot);
+        ev.dataTransfer.effectAllowed='move';
+      });
+    }
+    td.addEventListener('dragover',ev=>{
+      const s = slotEm(prof,d,h);
+      // célula vazia aceita tudo; aula com vaga aceita aluno; drop valida o resto
+      if(s && s.tipo!=='aula') return;
+      if(s && s.tipo==='aula' && s.alunos.length>=MAX_POR_QUADRA) return;
+      ev.preventDefault(); td.classList.add('drop-ok');
+    });
+    td.addEventListener('dragleave',()=>td.classList.remove('drop-ok'));
+    td.addEventListener('drop',ev=>{
+      ev.preventDefault(); td.classList.remove('drop-ok');
+      const dado = ev.dataTransfer.getData('text/plain');
+      if(dado.startsWith('aluno:')){
+        colocarAluno(dado.slice(6),prof,d,h);
+      } else if(dado.startsWith('slot:')){
+        const s = db.agenda.find(x=>x.id===dado.slice(5));
+        if(!s) return;
+        if(slotEm(prof,d,h)) return;      // só move para horário livre
+        s.prof=prof; s.dia=d; s.hora=h;
+        if(!quadraLivre(s.quadra,d,h,s.id)) s.quadra = melhorQuadra(d,h);
+        save(); render();
+      }
+    });
+  });
+}
+document.getElementById('selProf').addEventListener('change',renderAgenda);
+
+// ---------- painel ----------
+function renderPainel(){
+  const horasSemana = horasSemanaUtil();
+  const ocupadas = db.agenda.length;
+  const pct = horasSemana ? Math.round(100*ocupadas/horasSemana) : 0;
+  document.getElementById('pOcup').textContent = pct+'%';
+  document.getElementById('pOcupN').textContent = ocupadas+' de '+horasSemana+' horas úteis ('+db.cfg.horasUteisDia+'h seg–sex, '+db.cfg.horasSab+'h sáb)';
+  const bruta = db.alunos.reduce((s,a)=>s+mensalidade(a),0);
+  document.getElementById('pBruta').textContent = fmt(bruta);
+  const equil = db.cfg.garantiaProf>0 ? db.cfg.garantiaProf/(1-db.cfg.taxaClube/100) : 0;
+  document.getElementById('pBrutaN').textContent = equil
+    ? (bruta>=equil ? 'acima do equilíbrio da garantia ('+fmt(equil)+')' : 'equilíbrio da garantia: '+fmt(equil))
+    : '';
+  const pend = db.alunos.filter(a=>!a.pago);
+  document.getElementById('pPend').textContent = fmt(pend.reduce((s,a)=>s+mensalidade(a),0));
+  document.getElementById('pPendN').textContent = pend.length+' aluno(s) com o mês em aberto';
+  const clas = db.alunos.filter(a=>a.nivel).length;
+  document.getElementById('pNiv').textContent = clas+'/'+db.alunos.length;
+  document.getElementById('pNivN').textContent = clas===db.alunos.length
+    ? 'todos classificados 🎾' : (db.alunos.length-clas)+' ainda sem nível (N?)';
+  // ocupação por dia
+  const barra=(rotulo,extra,p,cor)=>`<div><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${rotulo}</span><span>${extra}</span></div><div class="barra"><i style="width:${Math.min(100,p)}%${cor?';background:'+cor:''}"></i></div></div>`;
+  document.getElementById('pDias').innerHTML = DIAS.map((nome,d)=>{
+    const base = horasDoDia(d);
+    const n = db.agenda.filter(s=>s.dia===d).length;
+    if(!base) return barra(nome, n?n+' marcação(ões) — dia sem aulas previstas':'sem aulas', n?100:0, 'var(--ink2)');
+    const p = Math.round(100*n/base);
+    return barra(nome, `${n}/${base} (${p}%)`, p, n===0?'var(--warn)':null);
+  }).join('');
+  // níveis
+  const dist = {1:0,2:0,3:0,4:0,5:0,x:0};
+  for(const a of db.alunos) dist[a.nivel||'x']++;
+  const tot = db.alunos.length||1;
+  document.getElementById('pNiveis').innerHTML =
+    [1,2,3,4,5].map(n=>barra(`N${n} ${NIVEIS[n]}`, dist[n]+' aluno(s)', 100*dist[n]/tot)).join('')+
+    barra('N? Não avaliados', dist.x+' aluno(s)', 100*dist.x/tot, 'var(--warn)');
+  // oportunidades
+  const oport = [];
+  const diasVazios = DIAS.filter((_,d)=>db.agenda.filter(s=>s.dia===d).length===0);
+  if(diasVazios.length)
+    oport.push(`<div class="sug-item">📅 <b>${diasVazios.join(', ')}</b>: nenhuma marcação — dia(s) inteiro(s) livre(s) para novas turmas ou eventos</div>`);
+  let nobresLivres = 0;
+  for(let d=0;d<7;d++) for(let h=db.cfg.horaIni; h<db.cfg.horaFim; h++)
+    if(isPremium(h)) for(const q of db.cfg.quadras) if(quadraLivre(q,d,h)) nobresLivres++;
+  if(nobresLivres)
+    oport.push(`<div class="sug-item">⭐ <b>${nobresLivres} horas nobres livres</b> na semana (★ na agenda) — as mais fáceis de vender; priorize trio/quarteto nelas</div>`);
+  const uns = db.alunos.filter(a=>slotsDoAluno(a.id).length===1);
+  if(uns.length)
+    oport.push(`<div class="sug-item">📈 <b>${uns.length} aluno(s) fazem só 1x/semana</b> (pagam metade): ${uns.map(a=>a.nome.split(' ')[0]).join(', ')} — oferecer o 2º horário dobra a mensalidade</div>`);
+  const semH = db.alunos.filter(a=>slotsDoAluno(a.id).length===0);
+  if(semH.length)
+    oport.push(`<div class="sug-item">🎾 <b>${semH.length} aluno(s) sem horário</b> na agenda — veja as sugestões de encaixe na aba Agenda</div>`);
+  document.getElementById('pOport').innerHTML = oport.join('') ||
+    '<div class="sug-item" style="color:var(--ok)">Agenda cheia e todo mundo encaixado 🏆</div>';
+  // turmas para revisar
+  const rev = [];
+  for(const s of db.agenda.filter(x=>x.tipo==='aula' && x.alunos.length>1)){
+    const as = s.alunos.map(aluno).filter(Boolean);
+    for(let i=0;i<as.length;i++) for(let j=i+1;j<as.length;j++){
+      if(incompativel(as[i],as[j])){
+        rev.push(`<div class="sug-item">⚠️ ${DIAS[s.dia]} ${String(s.hora).padStart(2,'0')}h ${s.quadra}: `+
+          as.map(a=>`${a.nome.split(' ')[0]} ${nivBadge(a)}${a.infantil?' <span class="b-inf">INF</span>':''}`).join(' + ')+'</div>');
+        i=as.length; break;
+      }
+    }
+  }
+  document.getElementById('pRevisar').innerHTML = rev.join('') ||
+    '<div class="sug-item" style="color:var(--ok)">Nenhuma turma com níveis incompatíveis ✓</div>';
+}
+
+// ---------- aproveitamento e sugestões ----------
+function renderSug(){
+  const horasDisp = horasSemanaUtil();
+  const ocupadas = db.agenda.length;
+  const pct = horasDisp ? Math.round(100*ocupadas/horasDisp) : 0;
+  document.getElementById('sugOcup').innerHTML =
+    `<b>${ocupadas}</b> de <b>${horasDisp}</b> horas úteis ocupadas na semana (${pct}% — ${db.cfg.horasUteisDia}h seg–sex e ${db.cfg.horasSab}h no sábado).`;
+  document.getElementById('sugBarra').style.width = Math.min(100,pct)+'%';
+  const itens = [];
+  // alunos com menos de 2 horários → onde encaixar
+  const turmasComVaga = db.agenda.filter(s=>s.tipo==='aula' && s.alunos.length<MAX_POR_QUADRA);
+  for(const a of db.alunos){
+    const n = slotsDoAluno(a.id).length;
+    if(n>=2) continue;
+    const encaixes = turmasComVaga.filter(s=>
+      !s.alunos.includes(a.id) &&
+      s.alunos.map(aluno).filter(Boolean).every(b=>!incompativel(a,b)));
+    const rotulo = n===0
+      ? `<b>${a.nome}</b> ${nivBadge(a)} está <span class="pill p-warn">sem horário</span>`
+      : `<b>${a.nome}</b> ${nivBadge(a)} só tem 1 horário (paga metade)`;
+    if(encaixes.length){
+      const melhores = encaixes.slice(0,2).map(s=>
+        `${DIAS[s.dia]} ${String(s.hora).padStart(2,'0')}h ${s.quadra} (${modalidadeLabel(s)}: ${s.alunos.map(id=>{const b=aluno(id);return b?b.nome.split(' ')[0]:'?';}).join(', ')})`).join(' ou ');
+      itens.push(`<div class="sug-item">${rotulo} → encaixa em ${melhores}</div>`);
+    } else {
+      itens.push(`<div class="sug-item">${rotulo} — nenhuma turma compatível com vaga; crie um horário novo arrastando o nome para a grade</div>`);
+    }
+  }
+  // turmas pequenas de alunos sem valor combinado (hora subaproveitada)
+  for(const s of db.agenda.filter(x=>x.tipo==='aula' && x.alunos.length===1)){
+    const a = aluno(s.alunos[0]);
+    if(a && !a.valorFixo && !a.infantil)
+      itens.push(`<div class="sug-item">${DIAS[s.dia]} ${String(s.hora).padStart(2,'0')}h ${s.quadra}: <b>${a.nome}</b> sozinho — completar a turma aumenta a receita da hora (dupla ${fmt(db.cfg.p2*2)}, trio ${fmt(db.cfg.p3*3)}, quarteto ${fmt(db.cfg.p4*4)}/mês)</div>`);
+  }
+  document.getElementById('sugLista').innerHTML = itens.length ? itens.join('')
+    : '<div class="sug-item" style="color:var(--ok)">Todos os alunos com 2 horários na semana e nenhuma pendência de encaixe 🎾</div>';
+}
+
+// ---------- modal do slot ----------
+let slotCtx = null;
+function abrirSlot(prof,dia,hora){
+  slotCtx = {prof,dia,hora};
+  const s = slotEm(prof,dia,hora);
+  const dlg = document.getElementById('dlgSlot');
+  document.getElementById('dlgSlotSub').textContent =
+    `${prof} · ${DIAS[dia]} · ${String(hora).padStart(2,'0')}h`;
+  const qSel = document.getElementById('slotQuadra');
+  const qAtual = s ? s.quadra : melhorQuadra(dia,hora);
+  qSel.innerHTML = db.cfg.quadras.map(q=>{
+    const livre = quadraLivre(q,dia,hora,s?s.id:null);
+    return `<option value="${q}"${q===qAtual?' selected':''}${livre?'':' disabled'}>${q}${livre?'':' — ocupada neste horário'}</option>`;
+  }).join('');
+  qSel.onchange = ()=>{ if(s){ s.quadra=qSel.value; save(); renderAgenda(); } };
+  const isOutro = s && s.tipo!=='aula';
+  document.getElementById('slotAulaBox').classList.toggle('hide',!!isOutro);
+  document.getElementById('dlgSlotTitulo').textContent =
+    isOutro ? 'Editar horário' : (s&&s.alunos.length?'Aula neste horário':'Horário livre');
+  // lista de alunos do slot
+  const lista = document.getElementById('slotLista');
+  if(s && s.tipo==='aula' && s.alunos.length){
+    document.getElementById('slotMod').innerHTML =
+      `<b>${modalidadeLabel(s)}</b>${isPremium(hora)?' <span class="pill p-warn">horário nobre'+(db.cfg.premPct>0?' +'+db.cfg.premPct+'%':'')+'</span>':''} — ${s.alunos.length} aluno(s): cada um paga `+
+      s.alunos.map(id=>{const a=aluno(id);return a?`${fmt(precoNoSlot(a,s.alunos.length,hora))}/mês (2x)`:'';})
+        .filter((v,i,arr)=>arr.indexOf(v)===i).join(' / ');
+    lista.innerHTML = s.alunos.map(id=>{
+      const a = aluno(id);
+      return `<div class="item">${a?a.nome:'?'} ${a?nivBadge(a):''}<button class="btn mini danger" data-rm="${id}">remover</button></div>`;
+    }).join('');
+    lista.querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click',()=>{
+      s.alunos = s.alunos.filter(x=>x!==b.dataset.rm);
+      if(!s.alunos.length) db.agenda = db.agenda.filter(x=>x.id!==s.id);
+      save(); render(); abrirSlot(prof,dia,hora);
+    }));
+  } else { document.getElementById('slotMod').textContent=''; lista.innerHTML=''; }
+  // select de adicionar
+  const jaNoSlot = s && s.tipo==='aula' ? s.alunos : [];
+  document.getElementById('slotAddAluno').innerHTML = '<option value="">— escolher —</option>'+
+    db.alunos.filter(a=>!jaNoSlot.includes(a.id))
+      .map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+  document.getElementById('slotTipo').value = isOutro ? s.tipo : '';
+  document.getElementById('slotTitulo').value = isOutro ? (s.titulo||'') : '';
+  document.getElementById('slotExcluir').classList.toggle('hide',!s);
+  dlg.showModal();
+}
+document.getElementById('slotAddAluno').addEventListener('change',ev=>{
+  if(!ev.target.value) return;
+  colocarAluno(ev.target.value, slotCtx.prof, slotCtx.dia, slotCtx.hora);
+  const s2 = slotEm(slotCtx.prof, slotCtx.dia, slotCtx.hora);
+  const qv = document.getElementById('slotQuadra').value;
+  if(s2 && qv && quadraLivre(qv, slotCtx.dia, slotCtx.hora, s2.id)) s2.quadra = qv;
+  save();
+  abrirSlot(slotCtx.prof, slotCtx.dia, slotCtx.hora);
+});
+document.getElementById('slotCancelar').addEventListener('click',()=>document.getElementById('dlgSlot').close());
+document.getElementById('slotSalvar').addEventListener('click',()=>{
+  const {prof,dia,hora} = slotCtx;
+  const tipo = document.getElementById('slotTipo').value;
+  const titulo = document.getElementById('slotTitulo').value.trim();
+  const qv = document.getElementById('slotQuadra').value || melhorQuadra(dia,hora);
+  let s = slotEm(prof,dia,hora);
+  if(tipo){ // virou reserva/evento
+    if(s){ s.tipo=tipo; s.titulo=titulo; s.quadra=qv; delete s.alunos; }
+    else db.agenda.push({id:crypto.randomUUID(),prof,quadra:qv,dia,hora,tipo,titulo});
+  } else if(s){ s.quadra=qv; }
+  save(); document.getElementById('dlgSlot').close(); render();
+});
+document.getElementById('slotExcluir').addEventListener('click',()=>{
+  const s = slotEm(slotCtx.prof,slotCtx.dia,slotCtx.hora);
+  if(s) db.agenda = db.agenda.filter(x=>x.id!==s.id);
+  save(); document.getElementById('dlgSlot').close(); render();
+});
+
+// ---------- alunos ----------
+let alunoEdit = null;
+function renderAlunos(){
+  const filtro = document.getElementById('filtroAluno').value;
+  const tb = document.querySelector('#tblAlunos tbody');
+  const lista = db.alunos.filter(a=>{
+    if(filtro==='pend') return !a.pago;
+    if(filtro==='sem') return slotsDoAluno(a.id).length===0;
+    return true;
+  });
+  tb.innerHTML = lista.map(a=>{
+    const hor = horariosLabel(a);
+    return `<tr>
+    <td><b>${a.nome}</b> ${nivBadge(a)}${a.infantil?' <span class="pill p-mut">infantil</span>':''}</td>
+    <td>${a.fone||''}</td>
+    <td>${hor||'<span class="pill p-warn">sem horário</span>'}</td>
+    <td style="text-align:right">${fmt(mensalidade(a))}${a.valorFixo?' <span class="pill p-mut" title="valor combinado — não muda com o tamanho da turma">combinado</span>':''}</td>
+    <td>${a.socio==='nao'?'<span class="pill p-mut">Não</span>':a.socio==='novo'?'<span class="pill p-ok">Novo sócio</span>':'<span class="pill p-ok">Sócio</span>'}</td>
+    <td>${a.pago?'<span class="pill p-ok">Pago</span>':'<span class="pill p-warn">Pendente</span>'}</td>
+    <td style="text-align:right;white-space:nowrap">
+      <button class="btn mini ghost" data-edit="${a.id}">Editar</button>
+      <button class="btn mini ghost" data-pg="${a.id}">${a.pago?'Estornar':'Receber'}</button>
+    </td></tr>`;}).join('') ||
+    '<tr><td colspan="7" style="color:var(--ink2)">Nenhum aluno neste filtro.</td></tr>';
+  tb.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>abrirAluno(b.dataset.edit)));
+  tb.querySelectorAll('[data-pg]').forEach(b=>b.addEventListener('click',()=>{
+    const a = db.alunos.find(x=>x.id===b.dataset.pg); a.pago=!a.pago; save(); render();
+  }));
+}
+document.getElementById('filtroAluno').addEventListener('change',renderAlunos);
+document.getElementById('btnNovoAluno').addEventListener('click',()=>abrirAluno(null));
+document.getElementById('btnNovoAluno2').addEventListener('click',()=>abrirAluno(null));
+function abrirAluno(id){
+  alunoEdit = id;
+  const a = id ? db.alunos.find(x=>x.id===id) : null;
+  document.getElementById('dlgAlunoTitulo').textContent = a ? 'Editar aluno' : 'Novo aluno';
+  document.getElementById('alNome').value = a?a.nome:'';
+  document.getElementById('alFone').value = a?a.fone:'';
+  document.getElementById('alFixo').value = a&&a.valorFixo?a.valorFixo:'';
+  document.getElementById('alNivel').value = a&&a.nivel?a.nivel:'';
+  document.getElementById('alInf').value = a&&a.infantil?'sim':'nao';
+  document.getElementById('alSocio').value = a?a.socio:'sim';
+  document.getElementById('alPago').value = a&&!a.pago?'nao':'sim';
+  document.getElementById('alExcluir').classList.toggle('hide',!a);
+  document.getElementById('dlgAluno').showModal();
+}
+document.getElementById('alCancelar').addEventListener('click',()=>document.getElementById('dlgAluno').close());
+document.getElementById('alSalvar').addEventListener('click',()=>{
+  const nome = document.getElementById('alNome').value.trim();
+  if(!nome) return document.getElementById('alNome').focus();
+  const fixo = +document.getElementById('alFixo').value||null;
+  const ehInfantil = document.getElementById('alInf').value==='sim';
+  if(fixo && !ehInfantil && fixo<db.cfg.piso &&
+    !confirm(`O valor combinado ${fmt(fixo)} está abaixo do piso de ${fmt(db.cfg.piso)} por aluno.\n\nSalvar mesmo assim?`)) return;
+  const dados = {
+    nome, fone:document.getElementById('alFone').value.trim(),
+    valorFixo:+document.getElementById('alFixo').value||null,
+    nivel:+document.getElementById('alNivel').value||null,
+    infantil:document.getElementById('alInf').value==='sim',
+    socio:document.getElementById('alSocio').value,
+    pago:document.getElementById('alPago').value==='sim'
+  };
+  if(alunoEdit){ Object.assign(db.alunos.find(x=>x.id===alunoEdit),dados); }
+  else{ db.alunos.push({id:crypto.randomUUID(),...dados}); }
+  save(); document.getElementById('dlgAluno').close(); render();
+});
+document.getElementById('alExcluir').addEventListener('click',()=>{
+  db.alunos = db.alunos.filter(x=>x.id!==alunoEdit);
+  for(const s of db.agenda) if(s.alunos) s.alunos = s.alunos.filter(x=>x!==alunoEdit);
+  db.agenda = db.agenda.filter(s=>s.tipo!=='aula' || s.alunos.length);
+  save(); document.getElementById('dlgAluno').close(); render();
+});
+
+// ---------- financeiro ----------
+function renderFin(){
+  const taxa = db.cfg.taxaClube/100;
+  const bruta = db.alunos.reduce((s,a)=>s+mensalidade(a),0);
+  // garantia do professor: ele recebe no mínimo a garantia; clube fica com o saldo.
+  // quando a parte normal do professor supera a garantia, volta a divisão configurada.
+  const profNormal = bruta*(1-taxa);
+  const garantia = db.cfg.garantiaProf||0;
+  const prof = Math.max(profNormal, garantia);
+  const garantiaAtiva = garantia>0 && profNormal<garantia;
+  const clubeAulas = bruta - prof;
+  const nSocios = db.alunos.filter(a=>a.socio!=='nao').length;
+  const nNovos = db.alunos.filter(a=>a.socio==='novo').length;
+  const recSocios = nSocios*db.cfg.socio;
+  const comAula = db.alunos.filter(a=>slotsDoAluno(a.id).length>0).length;
+  document.getElementById('kBruta').textContent = fmt(bruta);
+  document.getElementById('kAlunos').textContent = comAula+' alunos com horário na agenda';
+  document.getElementById('kClube').textContent = fmt(clubeAulas);
+  document.getElementById('kTaxa').textContent = garantiaAtiva
+    ? 'saldo após a garantia do professor' : 'taxa de '+db.cfg.taxaClube+'%';
+  document.getElementById('kProf').textContent = fmt(prof);
+  document.querySelector('#kProf + .note').textContent = garantiaAtiva
+    ? 'garantia mínima de '+fmt(garantia)+' ativa' : 'divisão de '+(100-db.cfg.taxaClube)+'%';
+  document.getElementById('kSocios').textContent = fmt(recSocios);
+  document.getElementById('kSociosN').textContent = nSocios+' sócios ('+nNovos+' novos captados)';
+  document.getElementById('kTotal').textContent = fmt(clubeAulas+recSocios);
+  const brutaEquilibrio = garantia>0 && taxa<1 ? garantia/(1-taxa) : 0;
+  document.getElementById('kGarantiaInfo').innerHTML = garantia>0
+    ? (garantiaAtiva
+      ? `⚠️ Garantia ativa: a divisão ${100-db.cfg.taxaClube}/${db.cfg.taxaClube} volta quando a receita bruta das aulas passar de <b>${fmt(brutaEquilibrio)}</b>/mês — faltam ${fmt(Math.max(0,brutaEquilibrio-bruta))}.`
+      : `✓ Receita bruta acima do ponto de equilíbrio (${fmt(brutaEquilibrio)}) — divisão normal de ${100-db.cfg.taxaClube}/${db.cfg.taxaClube} em vigor.`)
+    : '';
+  // por modalidade (derivado dos horários reais)
+  const porMod = {};
+  for(const a of db.alunos){
+    for(const s of slotsDoAluno(a.id)){
+      const m = modalidadeLabel(s);
+      porMod[m] = porMod[m]||{alunos:new Set(),v:0};
+      porMod[m].alunos.add(a.id);
+      porMod[m].v += precoNoSlot(a,s.alunos.length,s.hora)/2;
+    }
+  }
+  document.querySelector('#tblMod tbody').innerHTML =
+    Object.entries(porMod).map(([m,x])=>
+      `<tr><td>${m}</td><td style="text-align:right">${x.alunos.size}</td><td style="text-align:right">${fmt(x.v)}</td></tr>`).join('')+
+    `<tr><td><b>Total</b></td><td style="text-align:right"><b>${comAula}</b></td><td style="text-align:right"><b>${fmt(bruta)}</b></td></tr>`;
+  const pend = db.alunos.filter(a=>!a.pago);
+  document.querySelector('#tblPend tbody').innerHTML =
+    pend.map(a=>`<tr><td>${a.nome}</td><td style="text-align:right">${fmt(mensalidade(a))}</td>
+      <td style="text-align:right"><button class="btn mini" data-pg="${a.id}">Receber</button></td></tr>`).join('') ||
+    '<tr><td colspan="3" style="color:var(--ok)">Todos os pagamentos em dia 🎉</td></tr>';
+  document.querySelectorAll('#tblPend [data-pg]').forEach(b=>b.addEventListener('click',()=>{
+    db.alunos.find(x=>x.id===b.dataset.pg).pago=true; save(); render();
+  }));
+}
+
+// ---------- modalidades ----------
+const AULAS_MES = 2*4.33; // 2 aulas/semana × 4,33 semanas
+const MODROWS = [
+  {key:'p1',  nome:'Individual',          pub:'Adulto',   n:1, nLabel:'1'},
+  {key:'p2',  nome:'Dupla',               pub:'Adulto',   n:2, nLabel:'2'},
+  {key:'p3',  nome:'Trio',                pub:'Adulto',   n:3, nLabel:'3'},
+  {key:'p4',  nome:'Quarteto',            pub:'Adulto',   n:4, nLabel:'4'},
+  {key:'inf1',nome:'Infantil individual', pub:'Infantil', n:1, nLabel:'1'},
+  {key:'infG',nome:'Infantil turma',      pub:'Infantil', n:4, nLabel:'2–4'},
+];
+function renderMod(){
+  const tb = document.querySelector('#tblModCfg tbody');
+  const porHora = r => (db.cfg[r.key]*r.n)/AULAS_MES;
+  const melhor = Math.max(...MODROWS.map(porHora));
+  tb.innerHTML = MODROWS.map(r=>{
+    const v = db.cfg[r.key], ph = porHora(r);
+    return `<tr>
+      <td><b>${r.nome}</b>${ph===melhor&&ph>0?' <span class="pill p-ok">★ melhor hora</span>':''}</td>
+      <td>${r.pub}</td><td>${r.nLabel} aluno(s)</td>
+      <td style="text-align:right"><input type="number" min="0" data-cfg="${r.key}" value="${v}" style="width:90px;text-align:right"></td>
+      <td style="text-align:right">${fmt(v/2)}</td>
+      <td style="text-align:right">${fmt(v*r.n)}</td>
+      <td style="text-align:right"><b>${fmt(ph)}</b></td>
+    </tr>`;
+  }).join('')+
+  `<tr>
+    <td><b>Aula avulsa</b></td><td>Adulto/Infantil</td><td>por aula</td>
+    <td style="text-align:right"><input type="number" min="0" data-cfg="avulsa" value="${db.cfg.avulsa||0}" style="width:90px;text-align:right"></td>
+    <td style="text-align:right" colspan="2">valor cobrado por aula única (sem mensalidade)</td>
+    <td style="text-align:right"><b>${fmt(db.cfg.avulsa||0)}</b></td>
+  </tr>`;
+  tb.querySelectorAll('[data-cfg]').forEach(i=>i.addEventListener('change',()=>{
+    db.cfg[i.dataset.cfg] = +i.value||0;
+    save(); render();
+  }));
+  // regras de preço
+  const piso = document.getElementById('cfgPiso');
+  piso.value = db.cfg.piso;
+  piso.onchange = ()=>{ db.cfg.piso = +piso.value||0; save(); render(); };
+  const regras = [
+    `<b>Piso:</b> nenhuma mensalidade por aluno abaixo de ${fmt(db.cfg.piso)} (2x/semana).`,
+    `<b>Desconto de turma cheia:</b> o valor de Quarteto (${fmt(db.cfg.p4)}) é condicionado a 4 na quadra — se a turma cair para 3, o sistema volta a cobrar Trio (${fmt(db.cfg.p3)}) automaticamente.`,
+    `<b>1x/semana:</b> paga 50% do valor 2x.`,
+    `<b>Horário nobre (${String(db.cfg.premIni2).padStart(2,'0')}h–${String(db.cfg.premFim2).padStart(2,'0')}h e ${String(db.cfg.premIni).padStart(2,'0')}h–${String(db.cfg.premFim).padStart(2,'0')}h ★):</b> a hora deve render no mínimo uma dupla cheia (${fmt(db.cfg.p2*2)}/mês) — adulto sozinho paga esse mínimo; com trio ou quarteto, vale o preço normal da turma${db.cfg.premPct>0?`; acréscimo de ${db.cfg.premPct}%`:''}${db.cfg.premNivelMin>0?`; reservado para nível N${db.cfg.premNivelMin}+`:''}.`,
+    db.cfg.garantiaProf>0
+      ? `<b>Garantia do professor:</b> repasse mínimo de ${fmt(db.cfg.garantiaProf)}/mês; o clube fica com o saldo até a receita bruta das aulas passar de ${fmt(db.cfg.garantiaProf/(1-db.cfg.taxaClube/100))}/mês — daí volta a divisão ${100-db.cfg.taxaClube}/${db.cfg.taxaClube}.`
+      : `<b>Garantia do professor:</b> desligada — divisão direta de ${100-db.cfg.taxaClube}/${db.cfg.taxaClube}.`,
+    `<b>Valores combinados:</b> são exceções pessoais e não seguem as regras acima — aparecem marcados como "combinado" na lista de alunos.`,
+  ];
+  document.getElementById('regrasTexto').innerHTML = regras.map(r=>`• ${r}`).join('<br>');
+  // alunos pagando abaixo do piso
+  const alertas = [];
+  for(const a of db.alunos){
+    if(a.infantil) continue; // piso vale para adultos
+    const ss = slotsDoAluno(a.id);
+    for(const s of ss){
+      const p = precoNoSlot(a, s.alunos.length, s.hora);
+      if(p < db.cfg.piso){
+        alertas.push(`<div class="sug-item"><b>${a.nome}</b> paga ${fmt(p)} (${a.valorFixo?'combinado':modalidadeLabel(s)}) no ${DIAS[s.dia]} ${String(s.hora).padStart(2,'0')}h — abaixo do piso de ${fmt(db.cfg.piso)}${a.valorFixo&&s.alunos.length<4?'; desconto de quarteto sem a turma cheia, vale renegociar':''}</div>`);
+        break;
+      }
+    }
+    if(!ss.length && a.valorFixo && a.valorFixo<db.cfg.piso)
+      alertas.push(`<div class="sug-item"><b>${a.nome}</b> tem valor combinado de ${fmt(a.valorFixo)} — abaixo do piso de ${fmt(db.cfg.piso)}</div>`);
+  }
+  document.getElementById('regrasAlertas').innerHTML = alertas.length
+    ? `<div class="sub" style="margin-top:8px"><b>Fora da regra hoje:</b></div>`+alertas.join('')
+    : '<div class="sug-item" style="color:var(--ok)">Nenhum aluno abaixo do piso 🎾</div>';
+}
+
+// ---------- config ----------
+function renderCfg(){
+  document.getElementById('cfgTaxa').value = db.cfg.taxaClube;
+  document.getElementById('cfgGarantia').value = db.cfg.garantiaProf;
+  document.getElementById('cfgSocio').value = db.cfg.socio;
+  document.getElementById('cfgProfs').value = db.cfg.professores.join(', ');
+  document.getElementById('cfgQuadras').value = db.cfg.quadras.join(', ');
+  document.getElementById('cfgHorasDia').value = db.cfg.horasUteisDia;
+  document.getElementById('cfgHorasSab').value = db.cfg.horasSab;
+  document.getElementById('cfgHorasDom').value = db.cfg.horasDom;
+  document.getElementById('cfgIni').value = db.cfg.horaIni;
+  document.getElementById('cfgFim').value = db.cfg.horaFim;
+  document.getElementById('cfgPremIni').value = db.cfg.premIni;
+  document.getElementById('cfgPremFim').value = db.cfg.premFim;
+  document.getElementById('cfgPremIni2').value = db.cfg.premIni2;
+  document.getElementById('cfgPremFim2').value = db.cfg.premFim2;
+  document.getElementById('cfgPremPct').value = db.cfg.premPct;
+  document.getElementById('cfgPremNiv').value = db.cfg.premNivelMin;
+}
+document.getElementById('btnSalvarCfg').addEventListener('click',()=>{
+  db.cfg.taxaClube = +document.getElementById('cfgTaxa').value||0;
+  db.cfg.garantiaProf = +document.getElementById('cfgGarantia').value||0;
+  db.cfg.socio = +document.getElementById('cfgSocio').value||0;
+  db.cfg.quadras = document.getElementById('cfgQuadras').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!db.cfg.quadras.length) db.cfg.quadras=['Quadra 1'];
+  db.cfg.professores = document.getElementById('cfgProfs').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!db.cfg.professores.length) db.cfg.professores=['Mateus Heerdt'];
+  db.cfg.horasUteisDia = Math.min(16,Math.max(0,+document.getElementById('cfgHorasDia').value||9));
+  db.cfg.horasSab = Math.min(16,Math.max(0,+document.getElementById('cfgHorasSab').value||0));
+  db.cfg.horasDom = Math.min(16,Math.max(0,+document.getElementById('cfgHorasDom').value||0));
+  db.cfg.horaIni = Math.min(23,Math.max(0,+document.getElementById('cfgIni').value||6));
+  db.cfg.horaFim = Math.min(24,Math.max(db.cfg.horaIni+1,+document.getElementById('cfgFim').value||22));
+  db.cfg.premIni = Math.min(23,Math.max(0,+document.getElementById('cfgPremIni').value||0));
+  db.cfg.premFim = Math.min(24,Math.max(0,+document.getElementById('cfgPremFim').value||0));
+  db.cfg.premIni2 = Math.min(23,Math.max(0,+document.getElementById('cfgPremIni2').value||0));
+  db.cfg.premFim2 = Math.min(24,Math.max(0,+document.getElementById('cfgPremFim2').value||0));
+  db.cfg.premPct = Math.min(100,Math.max(0,+document.getElementById('cfgPremPct').value||0));
+  db.cfg.premNivelMin = Math.min(5,Math.max(0,+document.getElementById('cfgPremNiv').value||0));
+  save(); render();
+});
+document.getElementById('btnReset').addEventListener('click',()=>{
+  if(confirm('Substituir todos os dados pelos dados de exemplo?')){ db=seed(); save(); render(); }
+});
+
+function render(){ renderPainel(); renderChips(); renderAgenda(); renderSug(); renderAlunos(); renderMod(); renderFin(); renderCfg(); }
+(async()=>{ await load(); render(); statusNuvem(); })();
+</script>
