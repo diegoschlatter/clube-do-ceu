@@ -1,5 +1,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1273b5">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icone-192.png">
 <title>Clube do Céu — Gestão de Quadras</title>
 <style>
   :root{
@@ -1188,4 +1191,8 @@ document.getElementById('btnReset').addEventListener('click',()=>{
 
 function render(){ renderPainel(); renderChips(); renderAgenda(); renderSug(); renderAlunos(); renderMod(); renderFin(); renderCfg(); }
 (async()=>{ await load(); render(); statusNuvem(); })();
+// PWA: instala o service worker quando servido por https (GitHub Pages) ou localhost
+if('serviceWorker' in navigator){
+  try{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){}
+}
 </script>
