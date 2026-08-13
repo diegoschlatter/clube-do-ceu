@@ -1,0 +1,147 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aulas de Tênis — Situação e Cenários · Clube do Céu</title>
+<style>
+  :root{
+    --bg:#f2f6f8; --surface:#ffffff; --surface2:#e9eff3;
+    --ink:#16303c; --ink2:#51707e; --line:#d5dfe5;
+    --accent:#1273b5; --aula-bg:#e2eff8; --inf:#7c5cb0; --inf-bg:#efe9f7;
+    --ok:#2c8a5b; --ok-bg:#e4f2ea; --warn:#c04b31; --warn-bg:#f7eddd; --evento:#b3762a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#101c23; --surface:#182a33; --surface2:#13232b;
+      --ink:#dce8ee; --ink2:#8fa8b3; --line:#2a4250;
+      --accent:#4da3d8; --aula-bg:#1a3a4d; --inf:#a98fd6; --inf-bg:#2d2543;
+      --ok:#5cba8b; --ok-bg:#1c3a2b; --warn:#e07b5f; --warn-bg:#3d2f1a; --evento:#d8a055;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#101c23; --surface:#182a33; --surface2:#13232b;
+    --ink:#dce8ee; --ink2:#8fa8b3; --line:#2a4250;
+    --accent:#4da3d8; --aula-bg:#1a3a4d; --inf:#a98fd6; --inf-bg:#2d2543;
+    --ok:#5cba8b; --ok-bg:#1c3a2b; --warn:#e07b5f; --warn-bg:#3d2f1a; --evento:#d8a055;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.55 "Segoe UI",system-ui,sans-serif}
+  .pg{max-width:960px;margin:0 auto;padding:34px 22px 60px}
+  header.capa{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+  h1{font-size:26px;margin:0;letter-spacing:.2px;text-wrap:balance}
+  .sub{color:var(--ink2);font-size:13.5px;margin:2px 0 0}
+  h2{font-size:18px;margin:38px 0 6px;border-bottom:2px solid var(--line);padding-bottom:6px}
+  p{max-width:68ch}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2)}
+  .kpi .v{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+  .kpi .n{font-size:12.5px;color:var(--ink2)}
+  table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;background:var(--surface)}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink2);
+    text-align:right;padding:8px 10px;border-bottom:2px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right}
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:14px 0}
+  .grade{table-layout:fixed;min-width:680px}
+  .grade th,.grade td{text-align:center;padding:3px 2px;font-size:10.5px;border:1px solid var(--line)}
+  .grade .h{background:var(--surface2);font-weight:700;color:var(--ink2);width:44px}
+  .grade .aula{background:var(--aula-bg);color:var(--ink);font-weight:600}
+  .grade .infc{background:var(--inf-bg);color:var(--ink);font-weight:600}
+  .grade .nobre{color:var(--evento);font-weight:700}
+  .grade .fora{background:var(--surface2);opacity:.45}
+  .tagbar{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin:8px 0 0}
+  .tagbar i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px}
+  .melhor{background:var(--ok-bg);color:var(--ok);font-weight:700;border-radius:6px;padding:1px 8px;font-size:12px}
+  .alerta{background:var(--warn-bg);border-left:4px solid var(--warn);border-radius:8px;padding:12px 16px;margin:14px 0;font-size:14px}
+  .nota{background:var(--surface2);border-radius:8px;padding:12px 16px;margin:14px 0;font-size:13.5px;color:var(--ink2)}
+  .pos{color:var(--ok);font-weight:700}.neg{color:var(--warn);font-weight:700}
+  .duas{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+</style>
+
+<div class="pg">
+<header class="capa">
+  <svg width="52" height="52" viewBox="0 0 100 100" style="border-radius:10px;flex-shrink:0">
+    <rect width="100" height="61" fill="#1b75bb"/><rect y="61" width="100" height="39" fill="#7fb441"/>
+    <circle cx="50" cy="54" r="31" fill="#f5e31a"/>
+    <path d="M21 46 Q36 62 52 52 Q70 41 79 60" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+    <path d="M56 13 q5 -6 10 0 M70 20 q5 -6 10 0 M80 10 q5 -6 10 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+  <div>
+    <h1>Aulas de Tênis — Situação Atual e Cenários</h1>
+    <p class="sub">Clube do Céu · Chapadão do Céu, GO · 12 de agosto de 2026 · somente receita de aulas (sem mensalidades de sócio)</p>
+  </div>
+</header>
+
+<h2>1. Onde estamos hoje</h2>
+<div class="kpis">
+  <div class="kpi"><div class="l">Alunos ativos</div><div class="v">16</div><div class="n">14 da ficha + 2 novos</div></div>
+  <div class="kpi"><div class="l">Receita bruta de aulas</div><div class="v">R$ 6.100</div><div class="n">por mês, agenda atual</div></div>
+  <div class="kpi"><div class="l">Ocupação da semana</div><div class="v">46%</div><div class="n">23 de 50 horas úteis</div></div>
+  <div class="kpi"><div class="l">Horas vagas</div><div class="v">27</div><div class="n">base: 9h seg–sex + 5h sáb</div></div>
+</div>
+
+<h3 style="font-size:15px;margin:20px 0 4px">Agenda da semana (como está preenchida)</h3>
+<div class="scroll"><table class="grade">
+  <tr><th class="h">Hora</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sáb</th></tr>
+  <tr><td class="h nobre">08h★</td><td class="infc">Érico</td><td class="aula">Luiza+Magui</td><td class="infc">Érico</td><td class="aula">Luiza+Magui</td><td></td><td></td></tr>
+  <tr><td class="h">09h</td><td class="aula">Suzana</td><td class="aula">Eduardo</td><td></td><td class="aula">Eduardo</td><td class="aula">Suzana</td><td></td></tr>
+  <tr><td class="h">10h</td><td class="infc">Jady</td><td></td><td class="infc">Jady</td><td></td><td></td><td></td></tr>
+  <tr><td class="h">11h</td><td></td><td></td><td class="infc">Anita</td><td></td><td class="infc">Anita</td><td class="fora">—</td></tr>
+  <tr><td class="h">16h</td><td class="infc">João A.</td><td></td><td class="infc">João A.</td><td></td><td></td><td class="fora">—</td></tr>
+  <tr><td class="h nobre">17h★</td><td></td><td></td><td class="aula">Thomás</td><td></td><td class="aula">Thomás</td><td class="fora">—</td></tr>
+  <tr><td class="h nobre">18h★</td><td class="aula">Matheus M.+Otávio</td><td></td><td class="aula">Matheus M.+Otávio</td><td></td><td></td><td class="fora">—</td></tr>
+  <tr><td class="h nobre">19h★</td><td class="aula">Leonardo</td><td class="aula">Marcos</td><td></td><td class="aula">Marcos</td><td></td><td class="fora">—</td></tr>
+  <tr><td class="h">20h</td><td class="aula">Thiago+Matheus+Hugo</td><td></td><td class="aula">Thiago+Matheus+Hugo</td><td></td><td></td><td class="fora">—</td></tr>
+</table></div>
+<div class="tagbar">
+  <span><i style="background:var(--aula-bg);border:1px solid var(--accent)"></i>Aula adulto</span>
+  <span><i style="background:var(--inf-bg);border:1px solid var(--inf)"></i>Aula infantil</span>
+  <span>★ horário nobre</span>
+  <span><i style="background:var(--surface2)"></i>— fora da base útil</span>
+</div>
+
+<div class="alerta"><b>O ponto fraco da agenda de hoje:</b> das 23 aulas da semana, <b>17 têm um aluno sozinho na quadra</b>. A mesma hora que rende R$ 300–345 com um aluno renderia R$ 500–560 com dupla, trio ou quarteto. Completar as turmas existentes vale quase tanto quanto abrir horários novos.</div>
+
+<h2>2. Onde estão as 27 horas vagas</h2>
+<table>
+  <tr><th>Dia</th><th>Ocupadas</th><th>Base útil</th><th>Vagas</th><th style="text-align:left">Leitura</th></tr>
+  <tr><td>Segunda</td><td>7</td><td>9</td><td>2</td><td style="text-align:left">quase cheia</td></tr>
+  <tr><td>Terça</td><td>3</td><td>9</td><td class="neg">6</td><td style="text-align:left">tarde inteira livre</td></tr>
+  <tr><td>Quarta</td><td>7</td><td>9</td><td>2</td><td style="text-align:left">quase cheia</td></tr>
+  <tr><td>Quinta</td><td>3</td><td>9</td><td class="neg">6</td><td style="text-align:left">tarde inteira livre</td></tr>
+  <tr><td>Sexta</td><td>3</td><td>9</td><td class="neg">6</td><td style="text-align:left">manhã e noite livres</td></tr>
+  <tr><td>Sábado</td><td>0</td><td>5</td><td class="neg">5</td><td style="text-align:left">dia inteiro livre (7h–12h)</td></tr>
+  <tr><td><b>Total</b></td><td><b>23</b></td><td><b>50</b></td><td><b>27</b></td><td></td></tr>
+</table>
+<p class="nota">Terça e quinta à tarde/noite são horário nobre vazio — as horas mais fáceis de vender. O sábado de manhã, hoje zerado, é o dia clássico de aula de adulto que trabalha a semana toda.</p>
+
+<h2>3. Cenários de preenchimento</h2>
+<p>Preenchendo as horas vagas com uma distribuição equilibrada entre duplas, trios e quartetos (média de <b>R$ 528 por hora semanal/mês</b>: dupla R$ 500, trio R$ 525, quarteto R$ 560):</p>
+<div class="kpis">
+  <div class="kpi"><div class="l">Hoje — 23h (46%)</div><div class="v">R$ 6.100</div><div class="n">receita bruta/mês</div></div>
+  <div class="kpi"><div class="l">Cenário A — metade das vagas (+13h → 36h, 72%)</div><div class="v">R$ 12.968</div><div class="n">receita bruta/mês</div></div>
+  <div class="kpi"><div class="l">Cenário B — agenda cheia (+27h → 50h, 100%)</div><div class="v">R$ 20.365</div><div class="n">receita bruta/mês</div></div>
+</div>
+
+<h2>4. Modelo atual × professor alugando a quadra</h2>
+<p><b>Modelo atual:</b> clube fica com 40% das aulas e garante ao professor o mínimo de R$ 4.000/mês (o clube cobre a diferença enquanto os 60% dele não chegam lá — equilíbrio em R$ 6.667 de receita bruta).<br>
+<b>Modelo aluguel:</b> o professor paga ao clube <b>R$ 30 por hora-aula</b> e fica com toda a receita das aulas.</p>
+<div class="scroll"><table>
+  <tr><th style="text-align:left">R$/mês</th><th>Hoje (23h)</th><th>Cenário A (36h)</th><th>Cenário B (50h)</th></tr>
+  <tr><td colspan="4" style="text-align:left;background:var(--surface2)"><b>Modelo atual (60/40 + garantia R$ 4.000)</b></td></tr>
+  <tr><td>Professor recebe</td><td>4.000 <span class="melhor">garantia</span></td><td>7.781</td><td>12.219</td></tr>
+  <tr><td>Clube fica com</td><td>2.100</td><td class="pos">5.187</td><td class="pos">8.146</td></tr>
+  <tr><td colspan="4" style="text-align:left;background:var(--surface2)"><b>Modelo aluguel (R$ 30/hora-aula)</b></td></tr>
+  <tr><td>Professor recebe</td><td>3.112</td><td class="pos">8.292</td><td class="pos">13.870</td></tr>
+  <tr><td>Clube fica com</td><td class="pos">2.988</td><td>4.676</td><td>6.495</td></tr>
+</table></div>
+
+<div class="duas" style="margin-top:14px">
+  <div class="nota"><b>Para o clube:</b> o aluguel rende mais <i>hoje</i> (R$ 2.988 contra 2.100), porque transfere ao professor o risco da agenda fraca. Mas quando a agenda enche, o modelo atual passa na frente com folga (R$ 8.146 contra 6.495 no cenário cheio) — o clube participa do crescimento.</div>
+  <div class="nota"><b>Para o professor:</b> é o espelho: no aluguel ele ganha menos hoje (R$ 3.112 contra os 4.000 garantidos) e assume o risco, mas fica com quase todo o upside quando lota (R$ 13.870 contra 12.219). O modelo atual o protege exatamente na fase em que a escolinha ainda está sendo construída.</div>
+</div>
+<p class="nota"><b>Resumo em uma linha:</b> aluguel = clube vira imobiliária (receita previsível, upside limitado); modelo atual = clube vira sócio da escolinha (banca o começo, colhe o crescimento). Com a meta de encher a agenda, o modelo atual favorece o clube a partir de ~R$ 11 mil de receita bruta mensal.</p>
+
+<h2>5. Próximos passos sugeridos</h2>
+<p>1º completar as 17 aulas individuais existentes com mais alunos do mesmo nível (usar as sugestões de encaixe do app); 2º vender terça/quinta à tarde e o sábado de manhã; 3º manter a régua: piso de R$ 350, horário nobre rende no mínimo uma dupla cheia, descontos só com valor combinado registrado.</p>
+</div>

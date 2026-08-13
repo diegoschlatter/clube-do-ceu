@@ -306,6 +306,15 @@
     </div>
     <div id="regrasTexto" class="sub" style="margin-bottom:6px"></div>
     <div id="regrasAlertas"></div>
+    <h2 style="font-size:15px;margin-top:18px">Regras anotadas para o contrato (a implementar)</h2>
+    <div class="sub">
+      • <b>Cancelamento com prazo:</b> falta sem aviso de 24h não gera reposição — reposição é cortesia, não direito.<br>
+      • <b>Aula experimental única</b> por pessoa.<br>
+      • <b>Inadimplente há 2 meses:</b> agenda bloqueia novos encaixes até regularizar.<br>
+      • <b>Desconto só com regra:</b> valor fora da tabela exige o campo "valor combinado" preenchido na ficha.<br>
+      • <b>Reajuste anual</b> dos preços da tabela em data fixa.<br>
+      <i>Estas regras entrarão no contrato digital de aceite dos alunos, numa próxima fase da plataforma.</i>
+    </div>
   </div>
 </section>
 
@@ -698,8 +707,10 @@ function renderAgenda(){
       if(s && s.tipo==='aula' && s.alunos.length){
         const nomes = s.alunos.map(id=>{const a=aluno(id);return a?a.nome.split(' ')[0]:'?';}).join(', ');
         const temInf = s.alunos.some(id=>{const a=aluno(id);return a&&a.infantil;});
+        const nvs = [...new Set(s.alunos.map(id=>{const a=aluno(id);return a&&a.nivel?a.nivel:null;}).filter(Boolean))].sort();
+        const nvLbl = nvs.length ? 'N'+nvs.join('/N') : 'N?';
         html += `<td class="${temInf?'t-inf':'t-aula'}" data-d="${d}" data-h="${h}" data-slot="${s.id}" draggable="true">
-          <div class="slot"><small>${modalidadeLabel(s)} · ${qTag(s.quadra)}</small><b>${nomes}</b></div></td>`;
+          <div class="slot"><small>${modalidadeLabel(s)} · ${qTag(s.quadra)} · ${nvLbl}</small><b>${nomes}</b></div></td>`;
       } else if(s && s.tipo!=='aula'){
         const tipos={reserva:'Reserva',evento:'Evento'};
         html += `<td class="t-${s.tipo}" data-d="${d}" data-h="${h}" data-slot="${s.id}" draggable="true">
