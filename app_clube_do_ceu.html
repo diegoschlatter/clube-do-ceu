@@ -329,11 +329,10 @@
     <div class="card kpi"><div class="lbl">Receita bruta aulas</div><div class="val" id="kBruta">—</div><div class="note" id="kAlunos"></div></div>
     <div class="card kpi"><div class="lbl">Fica com o clube</div><div class="val" id="kClube">—</div><div class="note" id="kTaxa"></div></div>
     <div class="card kpi"><div class="lbl">Repasse professor</div><div class="val" id="kProf">—</div><div class="note">aulas apenas</div></div>
-    <div class="card kpi"><div class="lbl">Mensalidades de sócio</div><div class="val" id="kSocios">—</div><div class="note" id="kSociosN"></div></div>
   </div>
   <div class="card">
-    <b>Total do clube no mês: <span id="kTotal" style="font-variant-numeric:tabular-nums"></span></b>
-    <div class="sub" style="margin-top:4px">Aulas (parte do clube) + mensalidades de sócio.</div>
+    <b>Total do clube no mês com as aulas: <span id="kTotal" style="font-variant-numeric:tabular-nums"></span></b>
+    <div class="sub" style="margin-top:4px">Somente aulas de tênis — mensalidades de sócio são outro controle, fora deste app.</div>
     <div class="sub" id="kGarantiaInfo" style="margin-top:2px"></div>
   </div>
   <div class="row">
@@ -359,7 +358,6 @@
       <div><label>Horas úteis no sábado</label><input type="number" id="cfgHorasSab" min="0" max="16"></div>
       <div><label>Horas úteis no domingo</label><input type="number" id="cfgHorasDom" min="0" max="16"></div>
       <div><label>Garantia do professor (R$/mês, 0 desliga)</label><input type="number" id="cfgGarantia" min="0"></div>
-      <div><label>Mensalidade de sócio (R$)</label><input type="number" id="cfgSocio" min="0"></div>
       <div><label>Professores (separe por vírgula)</label><input type="text" id="cfgProfs"></div>
       <div><label>Quadras (separe por vírgula)</label><input type="text" id="cfgQuadras"></div>
       <div><label>Agenda abre às (h)</label><input type="number" id="cfgIni" min="0" max="23"></div>
@@ -1030,9 +1028,6 @@ function renderFin(){
   const prof = Math.max(profNormal, garantia);
   const garantiaAtiva = garantia>0 && profNormal<garantia;
   const clubeAulas = bruta - prof;
-  const nSocios = db.alunos.filter(a=>a.socio!=='nao').length;
-  const nNovos = db.alunos.filter(a=>a.socio==='novo').length;
-  const recSocios = nSocios*db.cfg.socio;
   const comAula = db.alunos.filter(a=>slotsDoAluno(a.id).length>0).length;
   document.getElementById('kBruta').textContent = fmt(bruta);
   document.getElementById('kAlunos').textContent = comAula+' alunos com horário na agenda';
@@ -1042,9 +1037,7 @@ function renderFin(){
   document.getElementById('kProf').textContent = fmt(prof);
   document.querySelector('#kProf + .note').textContent = garantiaAtiva
     ? 'garantia mínima de '+fmt(garantia)+' ativa' : 'divisão de '+(100-db.cfg.taxaClube)+'%';
-  document.getElementById('kSocios').textContent = fmt(recSocios);
-  document.getElementById('kSociosN').textContent = nSocios+' sócios ('+nNovos+' novos captados)';
-  document.getElementById('kTotal').textContent = fmt(clubeAulas+recSocios);
+  document.getElementById('kTotal').textContent = fmt(clubeAulas);
   const brutaEquilibrio = garantia>0 && taxa<1 ? garantia/(1-taxa) : 0;
   document.getElementById('kGarantiaInfo').innerHTML = garantia>0
     ? (garantiaAtiva
@@ -1149,7 +1142,6 @@ function renderMod(){
 function renderCfg(){
   document.getElementById('cfgTaxa').value = db.cfg.taxaClube;
   document.getElementById('cfgGarantia').value = db.cfg.garantiaProf;
-  document.getElementById('cfgSocio').value = db.cfg.socio;
   document.getElementById('cfgProfs').value = db.cfg.professores.join(', ');
   document.getElementById('cfgQuadras').value = db.cfg.quadras.join(', ');
   document.getElementById('cfgHorasDia').value = db.cfg.horasUteisDia;
@@ -1167,7 +1159,6 @@ function renderCfg(){
 document.getElementById('btnSalvarCfg').addEventListener('click',()=>{
   db.cfg.taxaClube = +document.getElementById('cfgTaxa').value||0;
   db.cfg.garantiaProf = +document.getElementById('cfgGarantia').value||0;
-  db.cfg.socio = +document.getElementById('cfgSocio').value||0;
   db.cfg.quadras = document.getElementById('cfgQuadras').value.split(',').map(s=>s.trim()).filter(Boolean);
   if(!db.cfg.quadras.length) db.cfg.quadras=['Quadra 1'];
   db.cfg.professores = document.getElementById('cfgProfs').value.split(',').map(s=>s.trim()).filter(Boolean);
