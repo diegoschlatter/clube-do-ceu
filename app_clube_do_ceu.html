@@ -590,7 +590,7 @@ function statusNuvem(){
   if(!el) return;
   let txt, cor;
   if(!sb || !sessao || !nuvemOk){ txt = '⚠ ' + (msgNuvem || 'offline — salvo só neste aparelho'); cor = 'var(--warn)'; }
-  else { txt = aoVivo ? '☁ dados na nuvem · ao vivo' : '☁ dados na nuvem'; cor = 'var(--ok)'; }
+  else { txt = ''; cor = 'var(--ok)'; } // tudo certo: não mostra nada; só avisa quando há problema
   el.textContent = txt; el.style.color = cor;
   const u = document.getElementById('usuario');
   if(u){
