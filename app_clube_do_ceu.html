@@ -143,6 +143,12 @@
     border-radius:8px;padding:6px 10px;font-weight:600;font-size:13.5px}
   .lista-slot .item button{margin-left:auto}
   .mod-tag{font-size:12px;color:var(--ink2)}
+  #usuario a{color:inherit}
+  .erro{color:var(--warn);font-size:13px;margin:10px 0 0}
+  #aviso{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;z-index:50;
+    background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:13.5px;
+    box-shadow:var(--shadow);transition:.25s;pointer-events:none;max-width:92vw;text-align:center}
+  #aviso.on{opacity:1;transform:translate(-50%,0)}
   .cfg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px 16px;align-items:end}
   .cfg-grid>div{display:flex;flex-direction:column;justify-content:flex-end}
   .cfg-grid label{margin-top:0;min-height:30px;display:flex;align-items:flex-end}
@@ -162,6 +168,7 @@
     <div style="display:flex;flex-direction:column">
       <b>Clube do Céu</b><span>Chapadão do Céu · GO</span>
       <span id="nuvem" style="font-size:11px;margin-top:2px"></span>
+      <span id="usuario" style="font-size:11px;color:var(--ink2)" hidden><span id="usuarioEmail"></span> · <a href="#" id="btnSair">sair</a></span>
     </div>
   </div>
   <nav>
@@ -448,6 +455,21 @@
   </div>
 </dialog>
 
+<dialog id="dlgLogin">
+  <h2>Entrar</h2>
+  <p class="sub">Acesso restrito à equipe do Clube do Céu.</p>
+  <form id="formLogin">
+    <label for="loginEmail">E-mail</label>
+    <input id="loginEmail" type="email" autocomplete="username" required>
+    <label for="loginSenha">Senha</label>
+    <input id="loginSenha" type="password" autocomplete="current-password" required>
+    <p id="loginErro" class="erro" hidden></p>
+    <div class="dlg-actions"><button class="btn" type="submit" id="btnEntrar">Entrar</button></div>
+  </form>
+</dialog>
+<div id="aviso" role="status" aria-live="polite"></div>
+
+<script src="supabase.js"></script>
 <script>
 'use strict';
 const DIAS = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
@@ -496,43 +518,164 @@ function seed(){
 
 // ---------- nuvem (Supabase) ----------
 const SUPA_URL = 'https://rznueluwhujcpkxcsddi.supabase.co';
-const SUPA_KEY = 'sb_publishable_9M2xgzIsxBAJonx_1wACtA__ibPAULC';
-const SUPA_H = {apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY, 'Content-Type':'application/json'};
-let nuvemOk = false, salvarTimer = null;
+const SUPA_KEY = 'sb_publishable_9M2xgzIsxBAJonx_1wACtA__ibPAULC'; // chave pública: o acesso é controlado por login + RLS
+const LS_KEY = 'clube_ceu_db_v3';
+// supabase.js é servido junto com o app; se não carregar (1º acesso sem internet) o app segue só com os dados locais
+const sb = (typeof supabase !== 'undefined' && supabase.createClient) ? supabase.createClient(SUPA_URL, SUPA_KEY) : null;
+let db, sessao = null;
+let nuvemOk = false, aoVivo = false, enviando = false, recarregando = false, pendente = false;
+let salvarTimer = null, msgNuvem = '';
+let versaoNuvem = 0; // updated_at (ms) da última versão da nuvem que este aparelho conhece
+
+function gravarLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(db)); }catch(e){} }
+
+async function lerNuvem(){
+  const {data, error} = await sb.from('clube_ceu_estado').select('data,updated_at').eq('id','principal').maybeSingle();
+  if(error) throw error;
+  return data;
+}
 async function enviarNuvem(){
+  salvarTimer = null;
+  if(!sb || !sessao){ nuvemOk = false; pendente = true; statusNuvem(); return; }
+  enviando = true;
   try{
-    const r = await fetch(SUPA_URL+'/rest/v1/clube_ceu_estado?on_conflict=id',{
-      method:'POST',
-      headers:{...SUPA_H, Prefer:'resolution=merge-duplicates'},
-      body: JSON.stringify([{id:'principal', data:db, updated_at:new Date().toISOString()}])
-    });
-    nuvemOk = r.ok;
-  }catch(e){ nuvemOk = false; }
+    // o banco carimba o updated_at (trigger); o valor volta pra sabermos qual versão é a nossa
+    const {data, error} = await sb.from('clube_ceu_estado').upsert({id:'principal', data:db}).select('updated_at').single();
+    if(error) throw error;
+    versaoNuvem = Date.parse(data.updated_at);
+    nuvemOk = true; pendente = false; msgNuvem = '';
+  }catch(e){
+    nuvemOk = false; pendente = true;
+    msgNuvem = (e && e.code === '42501') ? 'sem permissão para gravar — alterações só neste aparelho' : '';
+  }
+  enviando = false;
   statusNuvem();
+}
+// Busca a versão da nuvem e, se for mais nova que a daqui, substitui e redesenha.
+async function recarregarDaNuvem(){
+  if(!sb || !sessao || recarregando || enviando || salvarTimer || pendente) return;
+  recarregando = true;
+  try{
+    const row = await lerNuvem();
+    if(row && row.data){
+      const t = Date.parse(row.updated_at);
+      if(t > versaoNuvem){
+        db = row.data; migrar(); versaoNuvem = t; gravarLocal(); render();
+        aviso('Dados atualizados: houve alteração em outro aparelho.');
+      }
+    }
+    nuvemOk = true; msgNuvem = '';
+  }catch(e){ nuvemOk = false; }
+  recarregando = false;
+  statusNuvem();
+}
+// Realtime: o banco avisa quando o estado muda; aí buscamos a versão nova.
+function assinarRealtime(){
+  if(!sb || !sessao) return;
+  sb.channel('clube-ceu-estado')
+    .on('postgres_changes', {event:'*', schema:'public', table:'clube_ceu_estado'}, p => {
+      if(enviando) return; // é a nossa própria gravação chegando
+      const t = (p.new && p.new.updated_at) ? Date.parse(p.new.updated_at) : 0;
+      if(t && t <= versaoNuvem) return;
+      recarregarDaNuvem();
+    })
+    .subscribe(status => {
+      aoVivo = (status === 'SUBSCRIBED');
+      if(aoVivo) recarregarDaNuvem(); // ao (re)conectar, confere se perdeu algo
+      statusNuvem();
+    });
 }
 function statusNuvem(){
   const el = document.getElementById('nuvem');
   if(!el) return;
-  el.textContent = nuvemOk ? '☁ dados na nuvem' : '⚠ offline — salvo só neste aparelho';
-  el.style.color = nuvemOk ? 'var(--ok)' : 'var(--warn)';
+  let txt, cor;
+  if(!sb || !sessao || !nuvemOk){ txt = '⚠ ' + (msgNuvem || 'offline — salvo só neste aparelho'); cor = 'var(--warn)'; }
+  else { txt = aoVivo ? '☁ dados na nuvem · ao vivo' : '☁ dados na nuvem'; cor = 'var(--ok)'; }
+  el.textContent = txt; el.style.color = cor;
+  const u = document.getElementById('usuario');
+  if(u){
+    u.hidden = !sessao;
+    if(sessao) document.getElementById('usuarioEmail').textContent = sessao.user.email;
+  }
+}
+let avisoTimer = null;
+function aviso(txt){
+  const el = document.getElementById('aviso');
+  if(!el) return;
+  el.textContent = txt; el.classList.add('on');
+  clearTimeout(avisoTimer); avisoTimer = setTimeout(() => el.classList.remove('on'), 4500);
 }
 
-let db;
+// ---------- login ----------
+// true/false = resposta do banco; null = não deu pra perguntar (sem internet)
+async function autorizado(){
+  try{
+    const {data, error} = await sb.rpc('clube_ceu_autorizado');
+    if(error) return null;
+    return data === true;
+  }catch(e){ return null; }
+}
+function pedirLogin(msgInicial){
+  const dlg = document.getElementById('dlgLogin');
+  const form = document.getElementById('formLogin');
+  const erro = document.getElementById('loginErro');
+  const btn = document.getElementById('btnEntrar');
+  dlg.addEventListener('cancel', e => e.preventDefault()); // Esc não fecha
+  if(msgInicial){ erro.textContent = msgInicial; erro.hidden = false; }
+  return new Promise(resolve => {
+    form.onsubmit = async e => {
+      e.preventDefault();
+      erro.hidden = true; btn.disabled = true; btn.textContent = 'Entrando…';
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginSenha').value;
+      const {data, error} = await sb.auth.signInWithPassword({email, password});
+      if(error){
+        erro.textContent = /invalid login/i.test(error.message) ? 'E-mail ou senha incorretos.'
+          : /fetch/i.test(error.message) ? 'Sem conexão. Tente de novo quando a internet voltar.'
+          : 'Não foi possível entrar: ' + error.message;
+        erro.hidden = false;
+      }else{
+        const ok = await autorizado();
+        if(ok === true){ sessao = data.session; dlg.close(); resolve(); }
+        else{
+          await sb.auth.signOut();
+          erro.textContent = ok === false ? 'Este e-mail ainda não está autorizado a usar o app. Fale com o Diego.'
+                                          : 'Não foi possível confirmar o acesso. Tente de novo.';
+          erro.hidden = false;
+        }
+      }
+      btn.disabled = false; btn.textContent = 'Entrar';
+    };
+    dlg.showModal();
+    document.getElementById('loginEmail').focus();
+  });
+}
+async function sair(e){
+  if(e) e.preventDefault();
+  if(!confirm('Sair do app neste aparelho? A cópia local dos dados será apagada.')) return;
+  try{ localStorage.removeItem(LS_KEY); }catch(err){}
+  if(sb){ try{ await sb.auth.signOut(); }catch(err){} }
+  location.reload();
+}
+
+// ---------- carga e gravação ----------
 async function load(){
   try{
-    const raw = localStorage.getItem('clube_ceu_db_v3');
+    const raw = localStorage.getItem(LS_KEY);
     db = raw ? JSON.parse(raw) : seed();
   }catch(e){ db = seed(); }
   // a nuvem é a fonte principal; o navegador é reserva para quando estiver sem internet
-  try{
-    const r = await fetch(SUPA_URL+'/rest/v1/clube_ceu_estado?id=eq.principal&select=data',{headers:SUPA_H});
-    if(r.ok){
-      const rows = await r.json();
-      if(rows.length && rows[0].data) db = rows[0].data;
+  if(sb && sessao){
+    try{
+      const row = await lerNuvem();
+      if(row && row.data){ db = row.data; versaoNuvem = Date.parse(row.updated_at); }
       else enviarNuvem(); // primeira vez: sobe o estado local
       nuvemOk = true;
-    }
-  }catch(e){ nuvemOk = false; }
+    }catch(e){ nuvemOk = false; }
+  }
+  migrar();
+}
+function migrar(){
   // migração: aplica os valores combinados da ficha a dados salvos antes do campo existir
   for(const a of db.alunos){
     if(a.valorFixo===undefined) a.valorFixo = FICHA[a.nome] ?? null;
@@ -553,7 +696,7 @@ async function load(){
   for(const s of db.agenda) if(!db.cfg.quadras.includes(s.quadra)) s.quadra = db.cfg.quadras[0];
 }
 function save(){
-  try{ localStorage.setItem('clube_ceu_db_v3', JSON.stringify(db)); }catch(e){}
+  gravarLocal();
   clearTimeout(salvarTimer);
   salvarTimer = setTimeout(enviarNuvem, 600);
 }
@@ -1181,7 +1324,24 @@ document.getElementById('btnReset').addEventListener('click',()=>{
 });
 
 function render(){ renderPainel(); renderChips(); renderAgenda(); renderSug(); renderAlunos(); renderMod(); renderFin(); renderCfg(); }
-(async()=>{ await load(); render(); statusNuvem(); })();
+async function iniciar(){
+  if(sb){
+    const {data:{session}} = await sb.auth.getSession();
+    sessao = session;
+    if(sessao && (await autorizado()) === false){ await sb.auth.signOut(); sessao = null;
+      await pedirLogin('Este e-mail não está mais autorizado a usar o app.'); }
+    if(!sessao) await pedirLogin();
+    sb.auth.onAuthStateChange((ev, s) => { sessao = s; if(ev === 'SIGNED_OUT') location.reload(); statusNuvem(); });
+    document.getElementById('btnSair').addEventListener('click', sair);
+  }
+  await load(); render(); statusNuvem();
+  assinarRealtime();
+  // ao voltar pra aba ou recuperar a internet, confere se há versão mais nova (ou envia o que ficou pendente)
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') recarregarDaNuvem(); });
+  window.addEventListener('focus', recarregarDaNuvem);
+  window.addEventListener('online', () => { if(pendente && !salvarTimer) enviarNuvem(); else recarregarDaNuvem(); });
+}
+iniciar();
 // PWA: instala o service worker quando servido por https (GitHub Pages) ou localhost
 if('serviceWorker' in navigator){
   try{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){}

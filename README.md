@@ -4,13 +4,35 @@ App de gestão do Clube do Céu (Chapadão do Céu, GO): agenda semanal por prof
 arrastar-e-soltar, cadastro de alunos com nível de habilidade (NTRP/ITF), modalidades e
 regras de preço, financeiro com garantia do professor e painel de indicadores.
 
+**Endereço do app:** https://diegoschlatter.github.io/clube-do-ceu/app_clube_do_ceu.html
+
 ## Como funciona
 
-- **Arquivo único**: [app_clube_do_ceu.html](app_clube_do_ceu.html) — HTML/CSS/JS sem dependências.
-- **Dados na nuvem**: salvos automaticamente no Supabase (tabela `clube_ceu_estado`,
-  documento JSONB único); o navegador guarda uma cópia offline (localStorage).
-- **Página pública**: servida pela edge function `clube` do Supabase, que lê o HTML da
-  tabela `clube_ceu_app`.
+- **Arquivo único**: [app_clube_do_ceu.html](app_clube_do_ceu.html) — HTML/CSS/JS sem build.
+  A única biblioteca é o [supabase.js](supabase.js) (cópia local do supabase-js 2.118.0),
+  usado para login, leitura/gravação e Realtime.
+- **Login obrigatório**: Supabase Auth (e-mail + senha). Só entra quem está na tabela
+  `clube_ceu_usuarios`; a RLS do banco bloqueia leitura e gravação de quem não está nela.
+- **Dados na nuvem**: um documento JSONB único na tabela `clube_ceu_estado` (id `principal`),
+  compartilhado por todos os usuários. O navegador guarda uma cópia offline (localStorage).
+- **Sincronização**: toda alteração é gravada 0,6 s depois. O banco carimba `updated_at`
+  (trigger) e avisa os outros aparelhos pelo Realtime, que recarregam na hora. Ao voltar
+  pra aba ou recuperar a internet, o app também confere se há versão mais nova.
+  Vale o último que grava: edições simultâneas no mesmo segundo podem se sobrescrever.
+- **PWA**: instalável no celular; o service worker ([sw.js](sw.js)) serve o app do cache
+  quando está sem internet (as chamadas ao Supabase nunca passam pelo cache).
+
+## Dar acesso a alguém
+
+1. No painel do Supabase (projeto `rznueluwhujcpkxcsddi`): **Authentication → Users → Add user**,
+   com e-mail e senha (marcar *auto confirm*).
+2. Incluir o e-mail na lista de autorizados (SQL Editor):
+
+```sql
+insert into public.clube_ceu_usuarios (email, nome) values ('pessoa@exemplo.com', 'Nome');
+```
+
+Para revogar, basta apagar a linha da tabela: no próximo acesso a pessoa é deslogada.
 
 ## Regras de negócio implementadas
 
@@ -26,6 +48,8 @@ regras de preço, financeiro com garantia do professor e painel de indicadores.
 
 ## Rodar localmente
 
+Qualquer servidor estático na pasta serve (o login e os dados vêm do Supabase):
+
 ```bash
 python -m http.server 8123
 # abrir http://localhost:8123/app_clube_do_ceu.html
@@ -33,5 +57,6 @@ python -m http.server 8123
 
 ## Publicar alterações
 
-Editar o HTML e reenviar para a tabela `clube_ceu_app` (o endereço público serve a
-versão da tabela; ver histórico da conversa no Claude Code para o script de envio).
+Basta dar push na branch `master`: o GitHub Pages publica a raiz do repositório em um ou
+dois minutos. (A edge function `clube` do Supabase, que servia o HTML da tabela
+`clube_ceu_app`, era o caminho antigo e não é mais atualizada.)
