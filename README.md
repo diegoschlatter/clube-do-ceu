@@ -24,15 +24,22 @@ regras de preço, financeiro com garantia do professor e painel de indicadores.
 
 ## Dar acesso a alguém
 
-1. No painel do Supabase (projeto `rznueluwhujcpkxcsddi`): **Authentication → Users → Add user**,
-   com e-mail e senha (marcar *auto confirm*).
-2. Incluir o e-mail na lista de autorizados (SQL Editor):
+Pelo próprio app, na aba **Usuários** (aparece só para administradores): nome, e-mail e
+senha inicial. Lá também dá para trocar a senha de alguém, promover a administrador e
+remover o acesso. Quem é administrador está marcado na coluna `admin` da tabela
+`clube_ceu_usuarios` (hoje só o Diego).
+
+Por baixo, a aba chama a edge function `clube-usuarios` do Supabase, que confere se quem
+pede é administrador e só então cria contas ou troca senhas com a chave de serviço (ela
+nunca vai para o navegador). Remover tira a linha da lista de autorizados; a conta de
+login continua no Supabase e pode ser apagada no painel, em **Authentication → Users**.
+
+Caminho manual, se precisar: criar o usuário em **Authentication → Users → Add user**
+(com *auto confirm*) e rodar no SQL Editor:
 
 ```sql
 insert into public.clube_ceu_usuarios (email, nome) values ('pessoa@exemplo.com', 'Nome');
 ```
-
-Para revogar, basta apagar a linha da tabela: no próximo acesso a pessoa é deslogada.
 
 ## Regras de negócio implementadas
 

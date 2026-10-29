@@ -178,6 +178,7 @@
     <button data-tab="mod">Modalidades</button>
     <button data-tab="fin">Financeiro</button>
     <button data-tab="cfg">Configurações</button>
+    <button data-tab="usuarios" id="navUsuarios" class="hide">Usuários</button>
   </nav>
 </header>
 
@@ -383,6 +384,30 @@
       <button class="btn" id="btnSalvarCfg">Salvar configurações</button>
       <button class="ghost btn" id="btnReset">Restaurar dados de exemplo</button>
     </div>
+  </div>
+</section>
+<!-- ============ USUÁRIOS (só administradores) ============ -->
+<section id="tab-usuarios" class="hide">
+  <h2>Usuários</h2>
+  <p class="sub">Quem pode entrar no app. <b>Remover</b> tira o acesso ao app; a conta de login continua existindo no Supabase.</p>
+  <div class="card">
+    <h2 style="font-size:15px">Adicionar usuário</h2>
+    <form id="formUsuario" autocomplete="off">
+      <div class="cfg-grid">
+        <div><label>Nome</label><input name="usuNome" required></div>
+        <div><label>E-mail</label><input name="usuEmail" type="email" required></div>
+        <div><label>Senha inicial (mínimo 8 caracteres)</label><input name="usuSenha" type="text" minlength="8" required></div>
+        <div><label style="flex-direction:row;align-items:center;gap:8px;min-height:0;margin-top:22px"><input type="checkbox" name="usuAdmin" style="width:auto">Administrador (pode gerenciar usuários)</label></div>
+      </div>
+      <p id="usuarioErro" class="erro" hidden></p>
+      <div class="dlg-actions" style="justify-content:flex-start"><button class="btn" type="submit" id="btnAddUsuario">Adicionar</button></div>
+    </form>
+  </div>
+  <div class="card">
+    <div class="scroll"><table id="tblUsuarios">
+      <thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Último acesso</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table></div>
   </div>
 </section>
 </main>
@@ -754,6 +779,101 @@ function horariosLabel(a){
   return ss.map(s=>`${DIAS[s.dia]} ${String(s.hora).padStart(2,'0')}h (${modalidadeLabel(s)})`).join(' · ');
 }
 
+// ---------- usuários (só administradores; passa pela edge function clube-usuarios) ----------
+let perfil = {admin:false}, listaUsuarios = null;
+async function meuPerfil(){
+  try{
+    const {data, error} = await sb.rpc('clube_ceu_meu_perfil');
+    return (!error && data) ? data : {admin:false};
+  }catch(e){ return {admin:false}; }
+}
+async function apiUsuarios(body){
+  const {data, error} = await sb.functions.invoke('clube-usuarios', {body});
+  if(error){
+    let msg = error.message || 'falha ao falar com o servidor';
+    try{ const j = await error.context.json(); if(j && j.erro) msg = j.erro; }catch(e){}
+    throw new Error(msg);
+  }
+  if(data && data.erro) throw new Error(data.erro);
+  return data;
+}
+async function carregarUsuarios(){
+  const tb = document.querySelector('#tblUsuarios tbody');
+  tb.innerHTML = '';
+  let tr = tb.insertRow(), td = tr.insertCell(); td.colSpan = 5; td.className = 'mod-tag'; td.textContent = 'Carregando…';
+  try{
+    listaUsuarios = (await apiUsuarios({acao:'listar'})).usuarios || [];
+    renderUsuarios();
+  }catch(e){
+    tb.innerHTML = '';
+    tr = tb.insertRow(); td = tr.insertCell(); td.colSpan = 5; td.className = 'erro'; td.textContent = 'Não foi possível carregar: ' + e.message;
+  }
+}
+function renderUsuarios(){
+  const tb = document.querySelector('#tblUsuarios tbody');
+  tb.innerHTML = '';
+  for(const u of listaUsuarios || []){
+    const tr = tb.insertRow();
+    const cel = txt => { const td = tr.insertCell(); td.textContent = txt; return td; };
+    cel(u.nome || '—');
+    cel(u.email);
+    const papel = document.createElement('span');
+    papel.className = 'pill ' + (u.admin ? 'p-ok' : 'p-mut');
+    papel.textContent = u.admin ? 'administrador' : 'usuário';
+    tr.insertCell().appendChild(papel);
+    cel(u.ultimo_acesso ? new Date(u.ultimo_acesso).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})
+                        : (u.tem_conta ? 'nunca entrou' : 'sem conta'));
+    const acoes = tr.insertCell();
+    acoes.style.whiteSpace = 'nowrap'; acoes.style.textAlign = 'right';
+    const eu = !!sessao && u.email.toLowerCase() === sessao.user.email.toLowerCase();
+    const botao = (txt, cls, fn) => {
+      const b = document.createElement('button');
+      b.className = 'btn mini ' + cls; b.textContent = txt; b.style.marginLeft = '6px';
+      b.addEventListener('click', fn); acoes.appendChild(b);
+    };
+    botao('nova senha', 'ghost', () => acaoUsuario(u, 'senha'));
+    if(!eu){
+      botao(u.admin ? 'tirar admin' : 'tornar admin', 'ghost', () => acaoUsuario(u, 'admin'));
+      botao('remover', 'danger', () => acaoUsuario(u, 'remover'));
+    }
+  }
+  if(!(listaUsuarios || []).length){
+    const tr = tb.insertRow(), td = tr.insertCell(); td.colSpan = 5; td.className = 'mod-tag'; td.textContent = 'Ninguém cadastrado.';
+  }
+}
+async function acaoUsuario(u, acao){
+  try{
+    if(acao === 'senha'){
+      const senha = prompt('Nova senha para ' + u.email + ' (mínimo 8 caracteres):');
+      if(senha === null) return;
+      await apiUsuarios({acao:'senha', email:u.email, senha});
+      aviso('Senha de ' + u.email + ' alterada.');
+    }else if(acao === 'admin'){
+      if(!confirm((u.admin ? 'Tirar' : 'Dar') + ' o papel de administrador a ' + u.email + '?')) return;
+      await apiUsuarios({acao:'admin', email:u.email, admin:!u.admin});
+      aviso('Papel alterado.');
+    }else if(acao === 'remover'){
+      if(!confirm('Remover o acesso de ' + u.email + ' ao app?')) return;
+      await apiUsuarios({acao:'remover', email:u.email});
+      aviso('Acesso removido.');
+    }
+    await carregarUsuarios();
+  }catch(e){ alert('Não deu: ' + e.message); }
+}
+document.getElementById('formUsuario').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, btn = document.getElementById('btnAddUsuario'), erro = document.getElementById('usuarioErro');
+  erro.hidden = true; btn.disabled = true;
+  try{
+    const r = await apiUsuarios({acao:'criar', nome:f.usuNome.value.trim(), email:f.usuEmail.value.trim(),
+                                 senha:f.usuSenha.value, admin:f.usuAdmin.checked});
+    aviso(r.conta_existia ? 'Acesso liberado (a conta já existia; a senha foi atualizada).' : 'Usuário criado.');
+    f.reset();
+    await carregarUsuarios();
+  }catch(err){ erro.textContent = err.message; erro.hidden = false; }
+  btn.disabled = false;
+});
+
 // ---------- navegação ----------
 document.querySelectorAll('nav button').forEach(b=>{
   b.addEventListener('click',()=>{
@@ -761,6 +881,7 @@ document.querySelectorAll('nav button').forEach(b=>{
     b.classList.add('on');
     document.querySelectorAll('main > section').forEach(s=>s.classList.add('hide'));
     document.getElementById('tab-'+b.dataset.tab).classList.remove('hide');
+    if(b.dataset.tab === 'usuarios') carregarUsuarios();
     render();
   });
 });
@@ -1331,6 +1452,8 @@ async function iniciar(){
     if(sessao && (await autorizado()) === false){ await sb.auth.signOut(); sessao = null;
       await pedirLogin('Este e-mail não está mais autorizado a usar o app.'); }
     if(!sessao) await pedirLogin();
+    perfil = await meuPerfil();
+    if(perfil.admin) document.getElementById('navUsuarios').classList.remove('hide');
     sb.auth.onAuthStateChange((ev, s) => { sessao = s; if(ev === 'SIGNED_OUT') location.reload(); statusNuvem(); });
     document.getElementById('btnSair').addEventListener('click', sair);
   }
